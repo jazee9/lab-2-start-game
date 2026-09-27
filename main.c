@@ -11,7 +11,7 @@ const char *names[10] = {"Пусто", "Дерево", "Камень", "Семе
 int readInt() {
     int x; 
     while (scanf("%d", &x) != 1) {printf("Ошибка! Введите число: "); 
-        while (getchar() != '\n');} 
+        while (getchar() != '\n');} // точнее вот это
         return x;
 }
 
@@ -56,7 +56,7 @@ int main(void)
                     // В %02d закидывается current_hour и добавляется к нему 0 слева если там 1 цифра
                     
                 case 2: // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
-                    {printf("Сколько часов работать? \n"); // Спрашиваем пользователя
+                    {printf("Сколько часов работать? "); // Спрашиваем пользователя
                     int hour_input = readInt();
 
                     // Если не адекватный
@@ -78,12 +78,30 @@ int main(void)
                         {printf("Слот %d: [%d] (%s)\n", num, inventory[num], names[inventory[num]]);}} break;
                             // %s - закидывает имя предмета (names[inventory[num]]) 
                         
-                case 4:
+                case 4: // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
+                    {printf("Введите индекс слота (0-9): "); // Запрашиваем индекс у пользователя
+                    int index = readInt();
+
+                    // Если пользватель не адекватный 
+                    if (index < 0 || index > 9) {printf("Ошибка! Нет такого слота\n"); break;}
+
+                    // Если адекватный - дальше 
+                    else 
+                    {printf("Введите ID предмета: "); // Запрашиваем ID предмета
+                        int ID = readInt();
+                        
+                        // Если введен не правльный ID
+                        if (ID < 0 && ID > SIZE) {printf("Введен не правильный ID!\n"); break;}
+
+                        // Если все нормально - дальше
+                        else {inventory[index] = ID;} // Кладем в слот
+                        printf("Предмет: %s - положен в %d слот", names[inventory[ID]], index);} break;} // Выводим
+
                 case 5:
                 case 6:
             }
 
-        } while (choice != 0); /* Работает пока пользователь выбрал */
+        } while (choice != 0); // Работает пока пользователь выбрал 
     
     
-}
+return 0;}
