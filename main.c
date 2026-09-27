@@ -48,7 +48,10 @@ int main(void)
                 printf("Нет такого пункта меню.\n");
                 break;
 
-                case 0:
+                case 0: // ВЫХОД 
+                    printf("Выход...\n"); break;
+
+                break;
                 case 1:
                 case 2:
                 case 3:
