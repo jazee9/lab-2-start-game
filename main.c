@@ -51,10 +51,33 @@ int main(void)
                 case 0: // ВЫХОД 
                     printf("Выход...\n"); break;
 
-                break;
-                case 1:
-                case 2:
-                case 3:
+                case 1: // ПОСМОТРЕТЬ ВРЕМЯ 
+                    printf("Текущее время: День %d, %02d:00\n", current_day, current_hour); break;
+                    // В %02d закидывается current_hour и добавляется к нему 0 слева если там 1 цифра
+                    
+                case 2: // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
+                    {printf("Сколько часов работать? \n"); // Спрашиваем пользователя
+                    int hour_input = readInt();
+
+                    // Если не адекватный
+                    if (hour_input < 0) {printf("Часы не могут быть отрицательными!\n"); break;}
+
+                    // Дальше если он адекватный 
+                    else {current_hour += hour_input; // Прибавляем часы к current_hour 
+                        while (current_hour >= 24) {current_hour -= 24; current_day += 1;}}    
+                        // Если перебросилось на следующие сутки или несколько 
+
+                    // Выводим день и время сколько получилось по итогу после проматывания 
+                    printf("Теперь: День %d, %02d:00\n", current_day, current_hour); break;} 
+                
+
+                case 3: // ПОСМОТРЕТЬ ИНВЕНТАРЬ
+                    // Перебор и вывод каждого слота
+                    for (int num = 0; num < SIZE; num++) 
+                        {if (inventory[num] >= 0 && inventory[num] <= 9) 
+                        {printf("Слот %d: [%d] (%s)\n", num, inventory[num], names[inventory[num]]);}} break;
+                            // %s - закидывает имя предмета (names[inventory[num]]) 
+                        
                 case 4:
                 case 5:
                 case 6:
