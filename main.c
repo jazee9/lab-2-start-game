@@ -91,17 +91,30 @@ int main(void)
                         int ID = readInt();
                         
                         // Если введен не правльный ID
-                        if (ID < 0 && ID > SIZE) {printf("Введен не правильный ID!\n"); break;}
+                        if (ID < 0 || ID > SIZE) {printf("Введен не правильный ID!\n"); break;}
 
                         // Если все нормально - дальше
                         else {inventory[index] = ID;} // Кладем в слот
                         printf("Предмет: %s - положен в %d слот", names[inventory[ID]], index);} break;} // Выводим
 
-                case 5:
-                case 6:
-            }
+                case 5: // ВЫБРОСИТЬ ПРЕДМЕТ
+                    // Запрашиваем индекс у пользователя
+                    {printf("Введите индекс слота (0-9): "); 
+                    int index = readInt();
+                    
+                    // Введен не верный индекс
+                    if (index < 0 || index > 9) {printf("Ошибка! Нет такого слота\n"); break;}
 
-        } while (choice != 0); // Работает пока пользователь выбрал 
-    
-    
+                    // Если все нормально - дальше
+                    // Удаляем и выводим какой слот отчистили
+                    else {inventory[index] = 0; printf("Слот: %d - очищен!\n", index);} break;} 
+
+
+                    case 6:
+                } 
+                            
+                
+
+    } while (choice != 0); // Работает пока пользователь выбрал 
+       
 return 0;}
