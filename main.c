@@ -15,7 +15,7 @@ int readInt() {
         return x;
 }
 
-// =========== MAIN ========= //
+// =========== MAIN ========== //
 int main(void) 
 {// Инициализация основных переменных 
     int current_day = 1;
@@ -35,12 +35,10 @@ int main(void)
         printf("0. - Выход\n");
 
         printf("Выбор: ");
-
-        printf("Выбор: ");
         choice = readInt(); // Выбор варианта пользователем 
 
         // РАБОТА ЭТОГО МЕНЮ //
-        switch (choice) 
+        switch (choice)
             {// Если пользователь дурак, default - срабатывает, когда не сработал не один case 
                 default:
                 printf("Нет такого пункта меню.\n");
@@ -108,21 +106,21 @@ int main(void)
                     else {inventory[index] = 0; printf("Слот: %d - отчищен!\n", index);} break;} 
 
 
-                    case 6: // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
-                        // Запрашиваем ID предмета
-                        {printf("Введите ID предмета, который хотите удалить (0-9): ");
-                            int ID = readInt();
-                            int count_slot = 0; // Чтоб считать кол-во удаленных
+                case 6: // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
+                    // Запрашиваем ID предмета
+                    {printf("Введите ID предмета, который хотите удалить (0-9): ");
+                        int ID = readInt();
+                        int count_slot = 0; // Чтоб считать кол-во удаленных
 
-                            // Если введен не правльный ID
-                            if (ID < 0 || ID > SIZE) {printf("Введен не правильный ID!\n"); break;}
+                        // Если введен не правльный ID
+                        if (ID < 0 || ID > SIZE) {printf("Введен не правильный ID!\n"); break;}
 
-                            // Если все нормально - дальше
-                                // Перебор каждого слота
-                            else for (int num_slot = 0; num_slot < SIZE; num_slot++) 
-                                // Отчистка, если слот содержит ID, введеный пользователем
-                                {if (inventory[num_slot] == ID) {inventory[num_slot] = 0; count_slot++;}} 
-                            printf("Очищено слотов: %d\n", count_slot); break;} // Выводим
+                        // Если все нормально - дальше
+                            // Перебор каждого слота
+                        else for (int num_slot = 0; num_slot < SIZE; num_slot++) 
+                            // Отчистка, если слот содержит ID, введеный пользователем
+                            {if (inventory[num_slot] == ID) {inventory[num_slot] = 0; count_slot++;}} 
+                        printf("Очищено слотов: %d\n", count_slot); break;} // Выводим
                 } 
     } while (choice != 0); // Работает пока пользователь выбрал     
 return 0;}
