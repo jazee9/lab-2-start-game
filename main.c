@@ -12,6 +12,7 @@ int readInt() {
     int x; 
     while (scanf("%d", &x) != 1) {printf("Ошибка! Введите число: "); 
         while (getchar() != '\n');} // точнее вот это
+
         return x;
 }
 
