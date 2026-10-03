@@ -4,7 +4,7 @@
 // ⁡⁢⁣⁢===⁡ ⁡⁢⁣⁢КОНСТАНТЫ⁡ ⁡⁢⁣⁢===⁡ //
 #define HOURS_IN_DAY 24 // Константа для кол-ва часов в сутках
 
-// Для инвентаря
+// ⁡⁣⁢⁡⁢⁣⁢Для инвентаря⁡
 #define SIZE         10 // Кол-во слотов в инвентаре
 #define MAX_ITEMS    10 // Сколько всего видов предметов (ID)
 #define MAX_NAME_LEN 32 // Название предмета: 31 символ + '\0'
@@ -26,7 +26,8 @@ int readInt() {
 // ⁡⁢⁣⁢===========⁡ ⁡⁢⁣⁢MAIN⁡ ⁡⁢⁣⁢=========⁡ //
 
 int main(void) 
-{// Инициализация основных переменных 
+{
+    // ⁡⁢⁣⁢Инициализация основных переменных⁡ 
     int current_day = 1;
     int current_hour = 8;
     char item_names[MAX_ITEMS][MAX_NAME_LEN]; // Таблица названий предметов 10/32 - 1 ('\0')
@@ -35,8 +36,8 @@ int main(void)
 
     
     do {
-        // ====== МЕНЮ ====== //
-        printf("====== МЕНЮ ======");
+        // ⁡⁢⁣⁢====== МЕНЮ ======⁡ //
+        printf("\n====== МЕНЮ ======");
         printf("\n1. - Посмотреть на часы\n");
         printf("2. - Промотать время (Поработать)\n");
         printf("3. - Посмотреть инвентарь\n");
@@ -46,39 +47,22 @@ int main(void)
         printf("0. - Выход\n");
 
         printf("Выбор: ");
-        choice = readInt(); // Выбор варианта пользователем.
+        choice = readInt(); // Выбор варианта пользователем
 
-        // РАБОТА ЭТОГО МЕНЮ //
+        // ⁡⁢⁣⁡⁢⁣⁢===⁡ ⁡⁢⁣⁢РАБОТА ЭТОГО МЕНЮ⁡ ⁡⁢⁣⁢===⁡⁡ //
         switch (choice) 
-            {// Если пользователь дурак, default - срабатывает, когда не сработал не один case 
+            {
+                // ⁡⁢⁣⁢Если введена неверная цифра для выбора пункта меню⁡
                 default:
                 printf("Нет такого пункта меню.\n");
                 break;
 
+                // ⁡⁢⁣⁢=== CASES ==⁡ //
                 case 0: printf("Выход...\n"); break; // ВЫХОД 
                 case 1: showTime(current_day, current_hour); break; // ПОСМОТРЕТЬ ВРЕМЯ 
                 case 2: workTime(&current_day, &current_hour); break; // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
-                case 3: showInventory(inventory, item_names); break;
-            
-                        
-                case 4: // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
-                    {printf("Введите индекс слота (0-9): "); // Запрашиваем индекс у пользователя
-                    int index = readInt();
-
-                    // Если пользватель не адекватный (неверный слот)
-                    if (index < 0 || index > 9) {printf("Ошибка! Нет такого слота\n"); break;}
-
-                    // Если адекватный - дальше 
-                    else 
-                    {printf("Введите ID предмета: "); // Запрашиваем ID предмета
-                        int ID = readInt();
-                        
-                        // Если введен не правльный ID
-                        if (ID < 0 || ID > SIZE) {printf("Введен не правильный ID!\n"); break;}
-
-                        // Если все нормально - дальше
-                        else {inventory[index] = ID;} // Кладем в слот
-                        printf("Предмет: %s - положен в %d слот", names[inventory[ID]], index);} break;} // Выводим
+                case 3: showInventory(inventory, item_names); break; // ПОСМОТРЕТЬ ИНВЕНТАРЬ        
+                case 4: pulItem(inventory, item_names); break;// ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
 
                 case 5: // ВЫБРОСИТЬ ПРЕДМЕТ
                     // Запрашиваем индекс у пользователя
@@ -112,7 +96,8 @@ int main(void)
     } while (choice != 0); // Работает пока пользователь выбрал     
 return 0;}
 
-// ======== ФУНКЦИИ ДЛЯ CASES ======== //
+
+// ⁡⁢⁣⁢========⁡ ⁡⁢⁣⁢ФУНКЦИИ ДЛЯ CASES⁡ ⁡⁢⁣⁢========⁡ //
 
 // [1] Посмотреть время
 void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
@@ -136,6 +121,25 @@ void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LE
     for (int num = 0; num < SIZE; num++) 
         {if (inventory[num] >= 0 && inventory[num] <= 9) 
         {printf("Слот %d: [%d] (%s)\n", num, inventory[num], names[inventory[num]]);}} return;
+}
+
+// [4] ПОЛОЖИТЬ ПРЕДМЕТ В ИНВЕНТАРЬ
+void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN])
+{
+    printf("Введите индекс слота (0-%d): ", SIZE - 1); // Спрашиваем в какой слот ложить
+    int index = readInt(); // Записываем
+
+    if (index < 0 || index >= SIZE) // Неверный ввод
+    {printf("Ошибка! Нет такого слота\n"); return;} 
+
+    printf("Введите ID предмета (0-%d): ", MAX_ITEMS - 1); // Спрашиваем ID
+    int id = readInt(); // Записываем
+
+    if (id < 0 || id >= MAX_ITEMS) // Неверный ввод
+    {printf("Введен неправильный ID!\n"); return;} 
+
+    inventory[index] = id; // Кладем в слот
+    printf("Предмет: %s - положен в слот %d\n", item_names[id], index); // Выводим
 }
 
 
