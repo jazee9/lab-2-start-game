@@ -3,3 +3,7 @@
 *.o 
 *.out 
 *.vs
+*.vs/
+*.sln
+*.vcxproj*
+*.vscode
