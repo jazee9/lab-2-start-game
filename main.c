@@ -1,6 +1,6 @@
 // === ИМПОРТ ===⁡ //
 #include <stdio.h> // Для ввода и вывода 
-#include <string.h> 
+#include <string.h> // Для работы со строками (strlen, strcspn, strncpy)
 
 // ⁡⁢⁣=== КОНСТАНТЫ ===⁡ //
 #define HOURS_IN_DAY 24 // Константа для кол-ва часов в сутках
@@ -10,22 +10,63 @@
 #define MAX_ITEMS    10 // Сколько всего видов предметов (ID)
 #define MAX_NAME_LEN 32 // Название предмета: 31 символ + '\0'
 
+// Для имя фермера
+#define MAX_FARMER_NAME 32 // Имя фермера: 31 символ + '\0'
 
 // Названия предметов по ID (индекс = ID) 
 const char *names[10] = {"Пусто", "Дерево", "Камень", "Семена", "Железная руда", 
     "Золотая руда", "Алмазная руда", 
     "Вода", "Ягоды", "Веревка"};
 
+
 /* Не дает программе упасть если ввели не число (единственная строчка, которую я не смогу объяснить) */
-int readInt() {
-    int x; 
-    while (scanf("%d", &x) != 1) {printf("Ошибка! Введите число: "); 
-        while (getchar() != '\n');} // точнее вот это
-        return x;
+int readInt(void)
+{
+    int x, c;
+    while (scanf("%d", &x) != 1)
+    {
+        if (feof(stdin)) return 0; // конец ввода - иначе цикл был бы бесконечным
+        while ((c = getchar()) != '\n' && c != EOF);
+        printf("Ошибка! Введите число: ");
+    }
+    while ((c = getchar()) != '\n' && c != EOF); // убираем '\n' после числа, иначе он сломает readLine
+    return x;
+}
+
+// Читает строку с пробелами (максимум size-1 символов) и убирает '\n'
+void readLine(char *buf, size_t size) 
+{
+    if (fgets(buf, (int)size, stdin) == NULL) // конец ввода или ошибка
+    {
+        buf[0] = '\0';
+        return;
+    }
+
+    size_t len = strcspn(buf, "\n"); // позиция первого '\n' (или конец строки)
+    if (buf[len] == '\n')
+        buf[len] = '\0'; // заменяем '\n' на конец строки
+
+    else // строка не влезла в буфер - выкидываем остаток из потока
+    { 
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+    }
+}
+
+// Спрашиваем имя для фермера, пока не введут
+void readFarmerName(char *name)
+{
+    do
+    {
+        printf("Как зовут фермера? ");
+        readLine(name, MAX_FARMER_NAME);
+        if (strlen(name) == 0)
+            printf("Имя не может быть пустым!\n");
+    } while (strlen(name) == 0 && !feof(stdin));
 }
 
 // === ПРОТОТИПЫ (нейронка сказала сделать, без этого не работало) === //
-void printMenu(void);
+void printMenu(const char *farmer);
 void showTime(int day, int hour);
 void workTime(int *day, int *hour);
 void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
@@ -33,10 +74,7 @@ void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void deleteItem(int inventory[]);
 void clearTrash(int inventory[]);
 
-
-
 // =========== MAIN =========⁡ //
-
 int main(void) 
 {
     // Инициализация основных переменных⁡ 
@@ -46,9 +84,19 @@ int main(void)
     int inventory[SIZE] = {2, 3, 4, 4, 0, 0, 0, 0, 0, 0}; // Изначальный инвентарь 
     int choice; 
 
+    char farmer[MAX_FARMER_NAME]; // Для имени фермера
+    readFarmerName(farmer); // Запрашиваем имя фермера
+
+    // Заполняем таблицу названий
+    for (int i = 0; i < MAX_ITEMS; i++)
+    {
+        strncpy(item_names[i], names[i], MAX_NAME_LEN - 1);
+        item_names[i][MAX_NAME_LEN - 1] = '\0';
+    }
+
     do  
     {
-        printMenu(); // Запуск меню
+        printMenu(farmer); // Запуск меню
         choice = readInt(); // Выбор варианта пользователем
 
         switch (choice) 
@@ -72,9 +120,9 @@ int main(void)
 }
 
 // ⁡⁢⁣====== МЕНЮ ========⁡ //
-void printMenu(void) 
+void printMenu(const char *farmer) 
 {
-    printf("\n====== МЕНЮ ======");
+    printf("\n====== МЕНЮ ====== | Фермер: %s", farmer);
     printf("\n1. - Посмотреть на часы\n");
     printf("2. - Промотать время (Поработать)\n");
     printf("3. - Посмотреть инвентарь\n");
@@ -87,7 +135,7 @@ void printMenu(void)
     
 
 
-// ⁡⁢⁣======== ФУНКЦИИ ДЛЯ CASES ========⁡ //
+// ⁡⁢⁣========⁣======== ФУНКЦИИ ДЛЯ CASES ⁣================⁡ //
 
 // ================ Лаба 1 ================ //
 
@@ -112,7 +160,7 @@ void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LE
 {
     for (int num = 0; num < SIZE; num++) 
         {if (inventory[num] >= 0 && inventory[num] <= 9) // Перебор слотов
-        {printf("Слот %d: [%d] (%s)\n", num, inventory[num], names[inventory[num]]);}} return;
+        printf("Слот %d: [%d] (%s)\n", num, inventory[num], item_names[inventory[num]]);};
 }
 
 // [4] ПОЛОЖИТЬ ПРЕДМЕТ В ИНВЕНТАРЬ
@@ -144,7 +192,7 @@ void deleteItem(int inventory[])
     {printf("Ошибка! Нет такого слота\n"); return;} 
 
     inventory[index] = 0; // Чистим слот
-    printf("Слот %d - очищен!", inventory[index]); // Выводим
+    printf("Слот %d - очищен!", index); // Выводим
 }
 
 // [6-МОЙ 5-ЫЙ ВАРИАНТ] ОТЧИСТКА ОТ МУСОРА
@@ -160,10 +208,10 @@ void clearTrash(int inventory[])
     for (int num = 0; num < SIZE; num++) // Перебор слотов
         if (inventory[num] == id) {inventory[num] = 0; count++;} // Чистим, если есть
 
-    printf("Очищено слотов 666666: %d\n", count); // Выводиим
+    printf("Очищено слотов: %d\n", count); // Выводиим
 }
 
 // ================ Лаба 3 ================ //
 
-
+// [7] 
 
