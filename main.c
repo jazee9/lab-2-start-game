@@ -192,7 +192,7 @@ void deleteItem(int inventory[])
     {printf("Ошибка! Нет такого слота\n"); return;} 
 
     inventory[index] = 0; // Чистим слот
-    printf("Слот %d - очищен!", index); // Выводим
+    printf("Слот %d - очищен!\n", index); // Выводим
 }
 
 // [6-МОЙ 5-ЫЙ ВАРИАНТ] ОТЧИСТКА ОТ МУСОРА
@@ -201,7 +201,7 @@ void clearTrash(int inventory[])
     printf("Введите ID предмета, который хотите удалить (0-%d): ", MAX_ITEMS - 1);
     int id = readInt(); // Запрашиваем ID
 
-    if (id < 0 || id >= MAX_ITEMS) // Неверный ввод
+    if (id <= 0 || id >= MAX_ITEMS) // Неверный ввод
     {printf("Введен неправильный ID!\n"); return;} 
 
     int count = 0; // Для подсчета кол-ва слотов
