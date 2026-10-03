@@ -26,7 +26,8 @@ int readInt() {
 // ⁡⁢⁣⁢===========⁡ ⁡⁢⁣⁢MAIN⁡ ⁡⁢⁣⁢=========⁡ //
 
 int main(void) 
-{// Инициализация основных переменных 
+{
+    // Инициализация основных переменных 
     int current_day = 1;
     int current_hour = 8;
     char item_names[MAX_ITEMS][MAX_NAME_LEN]; // Таблица названий предметов 10/32 - 1 ('\0')
