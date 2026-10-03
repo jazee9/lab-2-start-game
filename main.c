@@ -45,7 +45,7 @@ int main(void)
         printf("0. - Выход\n");
 
         printf("Выбор: ");
-        choice = readInt(); // Выбор варианта пользователем 
+        choice = readInt(); // Выбор варианта пользователем.
 
         // РАБОТА ЭТОГО МЕНЮ //
         switch (choice) 
