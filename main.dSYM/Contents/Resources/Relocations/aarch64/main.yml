@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/jazee9macbook/Documents/Studies/Programming Fundamentals/lab-2-start-game/main'
+relocations:     []
+...

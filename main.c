@@ -1,6 +1,14 @@
-#include <stdio.h> // Импорт стандартной библы для ввода и вывода 
+// ⁡⁢⁣⁢===⁡ ⁡⁢⁣⁢ИМПОРТ⁡ ⁡⁢⁣⁢===⁡ //
+#include <stdio.h> // Для ввода и вывода 
 
-#define SIZE 10 // Константа для Inventory 
+// ⁡⁢⁣⁢===⁡ ⁡⁢⁣⁢КОНСТАНТЫ⁡ ⁡⁢⁣⁢===⁡ //
+#define HOURS_IN_DAY 24 // Константа для кол-ва часов в сутках
+
+// Для инвентаря
+#define SIZE         10 // Кол-во слотов в инвентаре
+#define MAX_ITEMS    10 // Сколько всего видов предметов (ID)
+#define MAX_NAME_LEN 32 // Название предмета: 31 символ + '\0'
+
 
 // Названия предметов по ID (индекс = ID) 
 const char *names[10] = {"Пусто", "Дерево", "Камень", "Семена", "Железная руда", 
@@ -15,11 +23,13 @@ int readInt() {
         return x;
 }
 
-// =========== MAIN ========= //
+// ⁡⁢⁣⁢===========⁡ ⁡⁢⁣⁢MAIN⁡ ⁡⁢⁣⁢=========⁡ //
+
 int main(void) 
 {// Инициализация основных переменных 
     int current_day = 1;
     int current_hour = 8;
+    char item_names[MAX_ITEMS][MAX_NAME_LEN]; // Таблица названий предметов 10/32 - 1 ('\0')
     int inventory[SIZE] = {1, 1, 4, 5, 6, 7, 8, 3, 0, 0}; // Разложил инвентарь 
     int choice;
 
@@ -44,35 +54,11 @@ int main(void)
                 printf("Нет такого пункта меню.\n");
                 break;
 
-                case 0: // ВЫХОД 
-                    printf("Выход...\n"); break;
-
-                case 1: // ПОСМОТРЕТЬ ВРЕМЯ 
-                    printf("Текущее время: День %d, %02d:00\n", current_day, current_hour); break;
-                    // В %02d закидывается current_hour и добавляется к нему 0 слева если там 1 цифра
-                    
-                case 2: // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
-                    {printf("Сколько часов работать? "); // Спрашиваем пользователя
-                    int hour_input = readInt();
-
-                    // Если не адекватный
-                    if (hour_input < 0) {printf("Часы не могут быть отрицательными!\n"); break;}
-
-                    // Дальше если он адекватный 
-                    else {current_hour += hour_input; // Прибавляем часы к current_hour 
-                        while (current_hour >= 24) {current_hour -= 24; current_day += 1;}}    
-                        // Если перебросилось на следующие сутки или несколько 
-
-                    // Выводим день и время сколько получилось по итогу после проматывания 
-                    printf("Теперь: День %d, %02d:00\n", current_day, current_hour); break;} 
-                
-
-                case 3: // ПОСМОТРЕТЬ ИНВЕНТАРЬ
-                    // Перебор и вывод каждого слота
-                    for (int num = 0; num < SIZE; num++) 
-                        {if (inventory[num] >= 0 && inventory[num] <= 9) 
-                        {printf("Слот %d: [%d] (%s)\n", num, inventory[num], names[inventory[num]]);}} break;
-                            // %s - закидывает имя предмета (names[inventory[num]]) 
+                case 0: printf("Выход...\n"); break; // ВЫХОД 
+                case 1: showTime(current_day, current_hour); break; // ПОСМОТРЕТЬ ВРЕМЯ 
+                case 2: workTime(&current_day, &current_hour); break; // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
+                case 3: showInventory(inventory, item_names); break;
+            
                         
                 case 4: // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
                     {printf("Введите индекс слота (0-9): "); // Запрашиваем индекс у пользователя
@@ -124,3 +110,34 @@ int main(void)
                 } 
     } while (choice != 0); // Работает пока пользователь выбрал     
 return 0;}
+
+// ======== ФУНКЦИИ ДЛЯ CASES ======== //
+
+// [1] Посмотреть время
+void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
+
+// [2] ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
+void workTime(int *day, int *hour)
+{ 
+    printf("Сколько часов поработать?: "); int h = readInt(); // Спрашиваем у пользователя
+    if (h < 0) {printf("Кол-во часов не могут быть отрицательными!\n"); return;} // Неверный ввод
+
+    *hour += h; // Прибавляем часы, введенные пользователем
+    *day += *hour / HOURS_IN_DAY; // Считаем день
+    *hour %= HOURS_IN_DAY; // Сколько часов по итогу
+
+    showTime(*day, *hour); // Выводим время после перемотки
+}
+
+// [3] ПОСМОТРЕТЬ ИНВЕНТАРЬ
+void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
+{
+    for (int num = 0; num < SIZE; num++) 
+        {if (inventory[num] >= 0 && inventory[num] <= 9) 
+        {printf("Слот %d: [%d] (%s)\n", num, inventory[num], names[inventory[num]]);}} return;
+}
+
+
+
+
+                
