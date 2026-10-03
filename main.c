@@ -1,10 +1,11 @@
-// ⁡⁢⁣⁢===⁡ ⁡⁢⁣⁢ИМПОРТ⁡ ⁡⁢⁣⁢===⁡ //
+// === ИМПОРТ ===⁡ //
 #include <stdio.h> // Для ввода и вывода 
+#include <string.h> 
 
-// ⁡⁢⁣⁢===⁡ ⁡⁢⁣⁢КОНСТАНТЫ⁡ ⁡⁢⁣⁢===⁡ //
+// ⁡⁢⁣=== КОНСТАНТЫ ===⁡ //
 #define HOURS_IN_DAY 24 // Константа для кол-ва часов в сутках
 
-// ⁡⁣⁢⁡⁢⁣⁢Для инвентаря⁡
+// Для инвентаря
 #define SIZE         10 // Кол-во слотов в инвентаре
 #define MAX_ITEMS    10 // Сколько всего видов предметов (ID)
 #define MAX_NAME_LEN 32 // Название предмета: 31 символ + '\0'
@@ -23,83 +24,74 @@ int readInt() {
         return x;
 }
 
-// ⁡⁢⁣⁢===========⁡ ⁡⁢⁣⁢MAIN⁡ ⁡⁢⁣⁢=========⁡ //
+// === ПРОТОТИПЫ (нейронка сказала сделать, без этого не работало) === //
+void printMenu(void);
+void showTime(int day, int hour);
+void workTime(int *day, int *hour);
+void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
+void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
+void deleteItem(int inventory[]);
+void clearTrash(int inventory[]);
+
+
+
+// =========== MAIN =========⁡ //
 
 int main(void) 
 {
-    // ⁡⁢⁣⁢Инициализация основных переменных⁡ 
+    // Инициализация основных переменных⁡ 
     int current_day = 1;
     int current_hour = 8;
     char item_names[MAX_ITEMS][MAX_NAME_LEN]; // Таблица названий предметов 10/32 - 1 ('\0')
-    int inventory[SIZE] = {1, 1, 4, 5, 6, 7, 8, 3, 0, 0}; // Разложил инвентарь 
-    int choice;
+    int inventory[SIZE] = {2, 3, 4, 4, 0, 0, 0, 0, 0, 0}; // Изначальный инвентарь 
+    int choice; 
 
-    
-    do {
-        // ⁡⁢⁣⁢====== МЕНЮ ======⁡ //
-        printf("\n====== МЕНЮ ======");
-        printf("\n1. - Посмотреть на часы\n");
-        printf("2. - Промотать время (Поработать)\n");
-        printf("3. - Посмотреть инвентарь\n");
-        printf("4. - Положить предмет в слот\n");
-        printf("5. - Выбросить предмет\n");
-        printf("6. - Очистить мусор\n"); // Мой 5-ый вариант 
-        printf("0. - Выход\n");
-
-        printf("Выбор: ");
+    do  
+    {
+        printMenu(); // Запуск меню
         choice = readInt(); // Выбор варианта пользователем
 
-        // ⁡⁢⁣⁡⁢⁣⁢===⁡ ⁡⁢⁣⁢РАБОТА ЭТОГО МЕНЮ⁡ ⁡⁢⁣⁢===⁡⁡ //
         switch (choice) 
-            {
-                // ⁡⁢⁣⁢Если введена неверная цифра для выбора пункта меню⁡
-                default:
-                printf("Нет такого пункта меню.\n");
-                break;
+        {
 
-                // ⁡⁢⁣⁢=== CASES ==⁡ //
-                case 0: printf("Выход...\n"); break; // ВЫХОД 
-                case 1: showTime(current_day, current_hour); break; // ПОСМОТРЕТЬ ВРЕМЯ 
-                case 2: workTime(&current_day, &current_hour); break; // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
-                case 3: showInventory(inventory, item_names); break; // ПОСМОТРЕТЬ ИНВЕНТАРЬ        
-                case 4: pulItem(inventory, item_names); break;// ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
+        // ⁡⁢⁣Если введена неверная цифра для выбора пункта меню
+        default: printf("Нет такого пункта меню.\n"); break;
 
-                case 5: // ВЫБРОСИТЬ ПРЕДМЕТ
-                    // Запрашиваем индекс у пользователя
-                    {printf("Введите индекс слота (0-9): "); 
-                    int index = readInt();
-                    
-                    // Введен не верный индекс
-                    if (index < 0 || index > 9) {printf("Ошибка! Нет такого слота\n"); break;}
+        // ⁡⁢⁣=== CASES ===⁡ //
+        case 0: printf("Выход...\n"); break;                  // ВЫХОД 
+        case 1: showTime(current_day, current_hour); break;   // ПОСМОТРЕТЬ ВРЕМЯ 
+        case 2: workTime(&current_day, &current_hour); break; // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
+        case 3: showInventory(inventory, item_names); break;  // ПОСМОТРЕТЬ ИНВЕНТАРЬ        
+        case 4: putItem(inventory, item_names); break;        // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
+        case 5: deleteItem(inventory); break;                 // ВЫБРОСИТЬ ПРЕДМЕТ
+        case 6: clearTrash(inventory); break;                 // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
+        }
+    } while (choice != 0);
 
-                    // Если все нормально - дальше
-                    // Удаляем и выводим какой слот отчистили
-                    else {inventory[index] = 0; printf("Слот: %d - отчищен!\n", index);} break;} 
+    return 0;
+}
 
-
-                    case 6: // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
-                        // Запрашиваем ID предмета
-                        {printf("Введите ID предмета, который хотите удалить (0-9): ");
-                            int ID = readInt();
-                            int count_slot = 0; // Чтоб считать кол-во удаленных
-
-                            // Если введен не правльный ID
-                            if (ID < 0 || ID > SIZE) {printf("Введен не правильный ID!\n"); break;}
-
-                            // Если все нормально - дальше
-                                // Перебор каждого слота
-                            else for (int num_slot = 0; num_slot < SIZE; num_slot++) 
-                                // Отчистка, если слот содержит ID, введеный пользователем
-                                {if (inventory[num_slot] == ID) {inventory[num_slot] = 0; count_slot++;}} 
-                            printf("Очищено слотов: %d\n", count_slot); break;} // Выводим
-                } 
-    } while (choice != 0); // Работает пока пользователь выбрал     
-return 0;}
+// ⁡⁢⁣====== МЕНЮ ========⁡ //
+void printMenu(void) 
+{
+    printf("\n====== МЕНЮ ======");
+    printf("\n1. - Посмотреть на часы\n");
+    printf("2. - Промотать время (Поработать)\n");
+    printf("3. - Посмотреть инвентарь\n");
+    printf("4. - Положить предмет в слот\n");
+    printf("5. - Выбросить предмет\n");
+    printf("6. - Очистить мусор\n"); // Мой 5-ый вариант 
+    printf("0. - Выход\n");
+    printf("Выбор: ");
+}
+    
 
 
-// ⁡⁢⁣⁢========⁡ ⁡⁢⁣⁢ФУНКЦИИ ДЛЯ CASES⁡ ⁡⁢⁣⁢========⁡ //
+// ⁡⁢⁣======== ФУНКЦИИ ДЛЯ CASES ========⁡ //
 
-// [1] Посмотреть время
+// ================ Лаба 1 ================ //
+
+// [1] ПОСМОТРЕТЬ ВРЕМЯ
 void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
 
 // [2] ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
@@ -119,7 +111,7 @@ void workTime(int *day, int *hour)
 void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
 {
     for (int num = 0; num < SIZE; num++) 
-        {if (inventory[num] >= 0 && inventory[num] <= 9) 
+        {if (inventory[num] >= 0 && inventory[num] <= 9) // Перебор слотов
         {printf("Слот %d: [%d] (%s)\n", num, inventory[num], names[inventory[num]]);}} return;
 }
 
@@ -142,7 +134,36 @@ void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN])
     printf("Предмет: %s - положен в слот %d\n", item_names[id], index); // Выводим
 }
 
+// [5] ВЫБРОСИТЬ ПРЕДМЕТ
+void deleteItem(int inventory[])
+{
+    printf("Введите индекс слота (0-%d): ", SIZE - 1); // Спрашиваем в какой слот ложить
+    int index = readInt(); // Записываем
+
+    if (index < 0 || index >= SIZE) // Неверный ввод
+    {printf("Ошибка! Нет такого слота\n"); return;} 
+
+    inventory[index] = 0; // Чистим слот
+    printf("Слот %d - очищен!", inventory[index]); // Выводим
+}
+
+// [6-МОЙ 5-ЫЙ ВАРИАНТ] ОТЧИСТКА ОТ МУСОРА
+void clearTrash(int inventory[])
+{
+    printf("Введите ID предмета, который хотите удалить (0-%d): ", MAX_ITEMS - 1);
+    int id = readInt(); // Запрашиваем ID
+
+    if (id < 0 || id >= MAX_ITEMS) // Неверный ввод
+    {printf("Введен неправильный ID!\n"); return;} 
+
+    int count = 0; // Для подсчета кол-ва слотов
+    for (int num = 0; num < SIZE; num++) // Перебор слотов
+        if (inventory[num] == id) {inventory[num] = 0; count++;} // Чистим, если есть
+
+    printf("Очищено слотов 666666: %d\n", count); // Выводиим
+}
+
+// ================ Лаба 3 ================ //
 
 
 
-                
