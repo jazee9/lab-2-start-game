@@ -220,7 +220,8 @@ void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LE
 {
     for (int num = 0; num < SIZE; num++) 
         {if (inventory[num] >= 0 && inventory[num] <= 9) // Перебор слотов
-        printf("Слот %d: [%d] (%s)\n", num, inventory[num], item_names[inventory[num]]);};
+        printf("Слот %d: [%d] - (%s)\n", num, inventory[num], item_names[inventory[num]]);};
+        
 }
 
 // [4] ПОЛОЖИТЬ ПРЕДМЕТ В ИНВЕНТАРЬ
