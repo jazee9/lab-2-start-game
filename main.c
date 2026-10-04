@@ -136,6 +136,7 @@ void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void deleteItem(int inventory[]);
 void clearTrash(int inventory[]);
 int loadItemNames(char item_names[MAX_ITEMS][MAX_NAME_LEN], const char *filename);
+void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 
 
 // ====================== MAIN ====================⁡ //
@@ -173,6 +174,7 @@ int main(void)
         case 4: putItem(inventory, item_names); break;        // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
         case 5: deleteItem(inventory); break;                 // ВЫБРОСИТЬ ПРЕДМЕТ
         case 6: clearTrash(inventory); break;                 // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
+        case 7: findItem(inventory, item_names); break;       // ПОИСК ПРЕДМЕТА В РЮКЗАКЕ ПО НАЗВАНИЮ
         }
     } while (choice != 0);
 
@@ -189,6 +191,7 @@ void printMenu(const char *farmer)
     printf("4. - Положить предмет в слот\n");
     printf("5. - Выбросить предмет\n");
     printf("6. - Очистить мусор\n"); // Мой 5-ый вариант 
+    printf("7. - Найти предмет в инвентаре\n"); // От сюда лаба 3
     printf("0. - Выход\n");
     printf("Выбор: ");
 }
@@ -275,5 +278,52 @@ void clearTrash(int inventory[])
 
 // ================ Лаба 3 ================ //
 
-// [7] 
+// [7] ПОИСК ПРЕДМЕТА В РЮКЗАКЕ ПО НАЗВАНИЮ
+void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
+{
+    char query[MAX_NAME_LEN];
+    printf("Введите название предмета: ");
+    readLine(query, sizeof(query)); // Есил строка будет с пробелами
 
+    // Ищем ID в каталоге по названию
+    int id = -1; // -1 - пока не нашли
+
+    for (int i = 0; i < MAX_ITEMS; i++) // Перебираем строки
+    {
+        if (strcmp(item_names[i], query) == 0) {id = i; break;};  // Если совпали (strcmp возвращает 0)
+    }
+    
+    // Пустой ввод
+    if (query[0] == '\0') {printf("Название не может быть пустым!\n"); return;}
+
+    // Если нет в каталоге (id так и остался -1)
+    if (id == -1) {printf("Предмета: \"%s\" - нет в каталоге!\n", query); return;}
+
+    // Если нашелся
+    int count = 0; // Сколько слотов нашли
+    for (int num = 0; num < SIZE; num++) // Перебор слотов
+        if (inventory[num] == id) count++; // Если в нем есть count+1
+
+    // Если нет
+    if (count == 0) {printf("Предмет: \"%s\" - не содержится в инвентаре", query);}
+
+    // Если один (для окончания "в слоте", а не "в слотах")
+    if (count == 1) {printf("Предмет: \"%s\" - содержится в слоте: ", query);}
+
+    // Если не в одном а больше
+    else printf("Предмет: \"%s\" - содержится в слотах: ", query);
+
+    // Вывод номеров
+    int printed = 0;
+    for (int num = 0; num < SIZE; num++) // Перебор
+    {
+        if (inventory[num] != id) continue; // Если нет - дальше
+
+        if (printed > 0) printf(", "); // Запятая только между номерами
+        printf("№%d", num);
+        printed++;
+    }
+    printf("\n");
+}
+
+// [8] ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА (diary.txt)
