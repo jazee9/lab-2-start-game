@@ -1,9 +1,20 @@
+# Скомпилированные файлы
+*.exe
+*.o
+*.obj
+*.out
+/main
+*.dSYM/
 
-*.exe 
-*.o 
-*.out 
-*.vs
-*.vs/
+# VSC файлы какие-то
+.vs/
+.vscode/
 *.sln
 *.vcxproj*
-*.vscode
+
+# Это я так понял только на MacOS, нейронка сказала
+.DS_Store
+
+# Генерируемые программой файлы
+output.txt
+diary.txt
