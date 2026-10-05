@@ -3,7 +3,6 @@
 #include <string.h> // Для работы со строками (strlen, strcspn, strncpy)
 
 // ⁡⁢⁣========== КОНСТАНТЫ ============⁡ //
-
 #define HOURS_IN_DAY 24 // Константа для кол-ва часов в сутках
 
 // Для инвентаря
@@ -15,14 +14,14 @@
 // Для имени фермера
 #define MAX_FARMER_NAME 32 // Имя фермера: 31 символ + '\0'
 
-// Стандартные названия предметов по ID (страховка, если будут проблемы с items.txt)
+// Стандартные названия (страховка, если будут проблемы с items.txt)
 const char *names[10] = {"Пусто", "Дерево", "Камень", "Семена пшеницы", "Железная руда", 
     "Золотая руда", "Алмазная руда", 
     "Вода", "Ягоды", "Веревка"};
 
 // ⁡⁢⁣========= ДЛЯ НЕКОРЕКТНЫХ ВВОДОВ ================⁡ //
 
-/* Не дает программе упасть если ввели не число (единственная строчка, которую я не смогу объяснить) */
+// Не дает программе упасть если ввели не число 
 int readInt(void)
 {
     int x, c;
@@ -83,7 +82,7 @@ void fillDefaultNames(char item_names[MAX_ITEMS][MAX_NAME_LEN])
 }
 
 // Загружает названия из файла в формате "ID Название" (по одной строке на предмет).
-// Возвращает 1, если файл открылся, и 0, если нет (тогда остаются названия по умолчанию).
+// Возвращает 1, если файл открылся, и 0, если нет (тогда остаются названия по умолчанию (из names)).
 int loadItemNames(char item_names[MAX_ITEMS][MAX_NAME_LEN], const char *filename)
 {
     // Сначала заполняем стандартными (names) - так программа не упадет ни при каких проблемах с файлом
@@ -102,9 +101,9 @@ int loadItemNames(char item_names[MAX_ITEMS][MAX_NAME_LEN], const char *filename
     while (fgets(line, sizeof(line), f) != NULL) // Читает до последней строки, потом NULL
     {
         line_no++;
-        line[strcspn(line, "\r\n")] = '\0'; // убираем '\n' и '\r' (если файл с Windows) 
+        line[strcspn(line, "\r\n")] = '\0'; // Убираем '\n' и '\r' (если файл с Windows) 
 
-        if (line[0] == '\0') continue; // пропускаем пустые строки
+        if (line[0] == '\0') continue; // Пропускаем пустые строки
 
         int id;
         char name[MAX_NAME_LEN];
@@ -126,7 +125,7 @@ int loadItemNames(char item_names[MAX_ITEMS][MAX_NAME_LEN], const char *filename
 }
 
 
-// ========= ПРОТОТИПЫ (нейронка сказала сделать, без этого не работало) ====== //
+// ========= ПРОТОТИПЫ ======== //
 
 void printMenu(const char *farmer);
 void showTime(int day, int hour);
@@ -137,6 +136,7 @@ void deleteItem(int inventory[]);
 void clearTrash(int inventory[]);
 int loadItemNames(char item_names[MAX_ITEMS][MAX_NAME_LEN], const char *filename);
 void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
+void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 
 
 // ====================== MAIN ====================⁡ //
@@ -175,16 +175,17 @@ int main(void)
         case 5: deleteItem(inventory); break;                 // ВЫБРОСИТЬ ПРЕДМЕТ
         case 6: clearTrash(inventory); break;                 // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
         case 7: findItem(inventory, item_names); break;       // ПОИСК ПРЕДМЕТА В РЮКЗАКЕ ПО НАЗВАНИЮ
+        case 8: write_diary(farmer, current_day, current_hour, inventory, item_names); break; // ЗАПИСЬ В ДНЕВНИК         
         }
     } while (choice != 0);
-
     return 0;
 }
 
 // ⁡⁢⁣====== МЕНЮ ========⁡ //
+
 void printMenu(const char *farmer) 
 {
-    printf("\n====== МЕНЮ ====== | Фермер: %s", farmer);
+    printf("\n====== МЕНЮ | Фермер: %s ======", farmer);
     printf("\n1. - Посмотреть на часы\n");
     printf("2. - Промотать время (Поработать)\n");
     printf("3. - Посмотреть инвентарь\n");
@@ -192,15 +193,14 @@ void printMenu(const char *farmer)
     printf("5. - Выбросить предмет\n");
     printf("6. - Очистить мусор\n"); // Мой 5-ый вариант 
     printf("7. - Найти предмет в инвентаре\n"); // От сюда лаба 3
+    printf("8. - Записать состояние в дневник фермера\n");
     printf("0. - Выход\n");
     printf("Выбор: ");
 }
-    
-
 
 // ⁡⁢⁣========⁣======== ФУНКЦИИ ДЛЯ CASES ⁣================⁡ //
 
-// ================ Лаба 1 ================ //
+// ================ Лаба 2 ================ //
 
 // [1] ПОСМОТРЕТЬ ВРЕМЯ
 void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
@@ -223,9 +223,7 @@ void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LE
 {
     for (int num = 0; num < SIZE; num++) 
         {if (inventory[num] >= 0 && inventory[num] <= 9) // Перебор слотов
-        printf("Слот %d: [%d] - %s\n", num, inventory[num], item_names[inventory[num]]);};
-        
-        
+        printf("Слот %d: [%d] - %s\n", num, inventory[num], item_names[inventory[num]]);};      
 }
 
 // [4] ПОЛОЖИТЬ ПРЕДМЕТ В ИНВЕНТАРЬ
@@ -327,3 +325,25 @@ void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN])
 }
 
 // [8] ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА (diary.txt)
+void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
+{
+    FILE *f = fopen("diary.txt", "a");
+    // Если не откроется
+    if (f == NULL) {printf("Ошибка! Не удалось открыть файл diary.txt для записи.\n"); return;}
+
+    fprintf(f, "==== Фермер: %s ====\n", farmer);
+    fprintf(f, "Время: День %d, %d:00\n", day, hour);
+    fprintf(f, "Инвентарь:\n");
+
+    // Выводим инвентарь
+    for (int num = 0; num < SIZE; num++) 
+    {
+        int id = inventory[num];
+        if (id >= 0 && id < MAX_ITEMS) 
+            fprintf(f, "  Слот %d: %s\n", num, item_names[id]);
+    }
+
+    fprintf(f, "\n"); // Пустая строка между записями
+    fclose(f);
+    printf("Запись добавленна\n");
+}
