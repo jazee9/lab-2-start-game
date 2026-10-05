@@ -137,6 +137,7 @@ void clearTrash(int inventory[]);
 int loadItemNames(char item_names[MAX_ITEMS][MAX_NAME_LEN], const char *filename);
 void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
+void analyzeLog(void);
 
 
 // ====================== MAIN ====================⁡ //
@@ -175,7 +176,8 @@ int main(void)
         case 5: deleteItem(inventory); break;                 // ВЫБРОСИТЬ ПРЕДМЕТ
         case 6: clearTrash(inventory); break;                 // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
         case 7: findItem(inventory, item_names); break;       // ПОИСК ПРЕДМЕТА В РЮКЗАКЕ ПО НАЗВАНИЮ
-        case 8: write_diary(farmer, current_day, current_hour, inventory, item_names); break; // ЗАПИСЬ В ДНЕВНИК         
+        case 8: write_diary(farmer, current_day, current_hour, inventory, item_names); break; // ЗАПИСЬ В ДНЕВНИК 
+        case 9: analyzeLog(); break;        
         }
     } while (choice != 0);
     return 0;
@@ -194,6 +196,7 @@ void printMenu(const char *farmer)
     printf("6. - Очистить мусор\n"); // Мой 5-ый вариант 
     printf("7. - Найти предмет в инвентаре\n"); // От сюда лаба 3
     printf("8. - Записать состояние в дневник фермера\n");
+    printf("9. - Анализ лога\n");
     printf("0. - Выход\n");
     printf("Выбор: ");
 }
@@ -222,8 +225,8 @@ void workTime(int *day, int *hour)
 void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
 {
     for (int num = 0; num < SIZE; num++) 
-        {if (inventory[num] >= 0 && inventory[num] <= 9) // Перебор слотов
-        printf("Слот %d: [%d] - %s\n", num, inventory[num], item_names[inventory[num]]);};      
+        {if (inventory[num] >= 0 && inventory[num] < MAX_ITEMS) // Перебор слотов
+        printf("Слот %d: [%d] - %s\n", num, inventory[num], item_names[inventory[num]]);}     
 }
 
 // [4] ПОЛОЖИТЬ ПРЕДМЕТ В ИНВЕНТАРЬ
@@ -281,39 +284,34 @@ void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN])
 {
     char query[MAX_NAME_LEN];
     printf("Введите название предмета: ");
-    readLine(query, sizeof(query)); // Есил строка будет с пробелами
+    readLine(query, sizeof(query)); // Если строка будет с пробелами
+
+    // Пустой ввод
+    if (query[0] == '\0') {printf("Название не может быть пустым!\n"); return;}
 
     // Ищем ID в каталоге по названию
     int id = -1; // -1 - пока не нашли
-
     for (int i = 0; i < MAX_ITEMS; i++) // Перебираем строки
-    {
-        if (strcmp(item_names[i], query) == 0) {id = i; break;};  // Если совпали (strcmp возвращает 0)
-    }
-    
-    // Пустой ввод
-    if (query[0] == '\0') {printf("Название не может быть пустым!\n"); return;}
+        if (strcmp(item_names[i], query) == 0) {id = i; break;} // strcmp возвращает 0, если совпали
 
     // Если нет в каталоге (id так и остался -1)
     if (id == -1) {printf("Предмета: \"%s\" - нет в каталоге!\n", query); return;}
 
-    // Если нашелся
-    int count = 0; // Сколько слотов нашли
-    for (int num = 0; num < SIZE; num++) // Перебор слотов
-        if (inventory[num] == id) count++; // Если в нем есть count+1
+    // Считаем, в скольких слотах он лежит
+    int count = 0;
+    for (int num = 0; num < SIZE; num++)
+        if (inventory[num] == id) count++;
 
-    // Если нет
-    if (count == 0) {printf("Предмет: \"%s\" - не содержится в инвентаре", query);}
+    // Если нет в инвентаре
+    if (count == 0) {printf("Предмет: \"%s\" - не содержится в инвентаре\n", query); return;}
 
-    // Если один (для окончания "в слоте", а не "в слотах")
-    if (count == 1) {printf("Предмет: \"%s\" - содержится в слоте: ", query);}
-
-    // Если не в одном а больше
+    // Один слот - "в слоте", несколько - "в слотах"
+    if (count == 1) printf("Предмет: \"%s\" - содержится в слоте: ", query);
     else printf("Предмет: \"%s\" - содержится в слотах: ", query);
 
     // Вывод номеров
     int printed = 0;
-    for (int num = 0; num < SIZE; num++) // Перебор
+    for (int num = 0; num < SIZE; num++)
     {
         if (inventory[num] != id) continue; // Если нет - дальше
 
@@ -336,7 +334,7 @@ void write_diary(const char *farmer, int day, int hour, const int inventory[], c
     fprintf(f, "Инвентарь:\n");
 
     // Выводим инвентарь
-    for (int num = 0; num < SIZE; num++) 
+    for (int num = 0; num < SIZE; num++) // Перебор слотов
     {
         int id = inventory[num];
         if (id >= 0 && id < MAX_ITEMS) 
@@ -345,5 +343,87 @@ void write_diary(const char *farmer, int day, int hour, const int inventory[], c
 
     fprintf(f, "\n"); // Пустая строка между записями
     fclose(f);
-    printf("Запись добавленна\n");
+    printf("Запись добавлена\n");
+}
+
+// [9-МОй 5-ЫЙ ВАРИАНТ] АНАЛИЗАТОР ЛОГОВ
+// В input.txt записан системный журнал событий, где каждая строка начинается с тега важности: 
+// [INFO], [WARN] или [ERROR] (например, [ERROR] Здоровье игрока отрицательное, но он жив). 
+// Программа должна подсчитать общую статистику по каждому из трёх типов сообщений, а в output.txt 
+// выписать только строки с предупреждениями ([WARN]) и ошибками ([ERROR]), предварительно удалив сам тег 
+// из начала строки и добавив номер строки из исходного файла.
+void analyzeLog(void) 
+{
+    FILE *input = fopen("input.txt", "r");
+    // input.txt файла нет
+    if (input == NULL) {printf("Ошибка: не удалось открыть input.txt\n"); return;} 
+    
+    FILE *output = fopen("output.txt", "w");
+    // output.txt файла нет
+    if (output == NULL)
+        {
+            printf("Ошибка: не удалось открыть output.txt для записи.\n");
+            fclose(input);
+            return;
+        }
+
+    char line[LINE_BUF_LEN]; // массив символов line, в который будут считываться строки файла.
+    int line_no = 0; // Номер строки в исходном файле
+    int info_count = 0, warn_count = 0, error_count = 0; // Подсчет [INFO], [WARN], [ERROR]
+
+    printf("\n--- [WARN] и [ERROR] из input.txt ---\n"); // Заголовок
+        
+    while (fgets(line, sizeof(line), input) != NULL) // Читаем до последней строки
+    {
+        line_no++; // Считаем все строки, в том числе пустые
+
+        // ищет символ \n в строке и возвращает NULL, если не находит.
+        if (strchr(line, '\n') == NULL) 
+        {                          
+            int c;
+            // Читает и отбрасывает символы из файла до перевода строки или конца файла.
+            while ((c = fgetc(input)) != '\n' && c != EOF);
+        }
+        
+        line[strcspn(line, "\r\n")] = '\0'; // Убираем '\n' и '\r'
+
+        const char *text = NULL; // Текст без тега (NULL - строку выводить не надо)
+
+        // Если [INFO]
+        if (strncmp(line, "[INFO]", strlen("[INFO]")) == 0)
+            info_count++; // +1
+
+        // Если [WARN]
+        else if (strncmp(line, "[WARN]", strlen("[WARN]")) == 0)
+        {
+            warn_count++; // +1
+            text = line + strlen("[WARN]"); // Перепрыгиваем тег
+        }
+
+        // Если [ERROR]
+        else if (strncmp(line, "[ERROR]", strlen("[ERROR]")) == 0)
+        {
+            error_count++; // +1
+            text = line + strlen("[ERROR]");
+        }
+
+        if (text != NULL) // Это WARN или ERROR
+        {
+            while (*text == ' ') text++; // Пропускаем пробелы после тега
+
+            printf("Строка %d: %s\n", line_no, text);          // На экран
+            fprintf(output, "Строка %d: %s\n", line_no, text); // В файл
+        }
+    }
+
+    // Закрываем файлы
+    fclose(input);
+    fclose(output);
+
+    // Вывод на экран
+    printf("\n--- Статистика ---\n");
+    printf("INFO:  %d\n", info_count);
+    printf("WARN:  %d\n", warn_count);
+    printf("ERROR: %d\n", error_count);
+    printf("Результат записан в output.txt\n");
 }
