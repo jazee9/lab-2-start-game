@@ -1,6 +1,7 @@
 // === ИМПОРТ ===⁡ //
 #include <stdio.h> // Для ввода и вывода 
 #include <string.h> // Для работы со строками (strlen, strcspn, strncpy)
+#include <stdlib.h> // Для работы с динамич. памятью и случайных чисел
 
 // ⁡⁢⁣========== КОНСТАНТЫ ============⁡ //
 #define HOURS_IN_DAY 24 // Константа для кол-ва часов в сутках
@@ -13,6 +14,12 @@
 
 // Для имени фермера
 #define MAX_FARMER_NAME 32 // Имя фермера: 31 символ + '\0'
+
+// Для карты
+#define MIN_MAP 5 // Размеры карты
+#define MAX_MAP 30
+#define OBSTACLE_MIN_MAP 15 // Вероятности припятствия
+#define OBSTACLE_MAX_MAP 30
 
 // Стандартные названия (страховка, если будут проблемы с items.txt)
 const char *names[10] = {"Пусто", "Дерево", "Камень", "Семена пшеницы", "Железная руда", 
@@ -138,6 +145,7 @@ int loadItemNames(char item_names[MAX_ITEMS][MAX_NAME_LEN], const char *filename
 void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void analyzeLog(void);
+void forestRingAdventure(void);
 
 
 // ====================== MAIN ====================⁡ //
@@ -177,7 +185,8 @@ int main(void)
         case 6: clearTrash(inventory); break;                 // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
         case 7: findItem(inventory, item_names); break;       // ПОИСК ПРЕДМЕТА В РЮКЗАКЕ ПО НАЗВАНИЮ
         case 8: write_diary(farmer, current_day, current_hour, inventory, item_names); break; // ЗАПИСЬ В ДНЕВНИК 
-        case 9: analyzeLog(); break;        
+        case 9: analyzeLog(); break; 
+        case 10: forestRingAdventure(); break;                // В ПРИКЛЮЧЕНИЕ (5-ЫЙ ВАРИАНТ)
         }
     } while (choice != 0);
     return 0;
@@ -197,6 +206,7 @@ void printMenu(const char *farmer)
     printf("7. - Найти предмет в инвентаре\n"); // От сюда лаба 3
     printf("8. - Записать состояние в дневник фермера\n");
     printf("9. - Анализ лога\n");
+    printf("10. Отправится в приключение (Лес-кольцо)\n");  // От сюда лаба 4 (5-ый вариант)
     printf("0. - Выход\n");
     printf("Выбор: ");
 }
