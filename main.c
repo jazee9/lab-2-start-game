@@ -2,6 +2,7 @@
 #include <stdio.h> // Для ввода и вывода 
 #include <string.h> // Для работы со строками (strlen, strcspn, strncpy)
 #include <stdlib.h> // Для работы с динамич. памятью и случайных чисел
+#include <time.h> // Для рандомных чисел
 
 // ⁡⁢⁣========== КОНСТАНТЫ ============⁡ //
 #define HOURS_IN_DAY 24 // Константа для кол-ва часов в сутках
@@ -18,8 +19,8 @@
 // Для карты
 #define MIN_MAP 5 // Размеры карты
 #define MAX_MAP 30
-#define OBSTACLE_MIN_MAP 15 // Вероятности припятствия
-#define OBSTACLE_MAX_MAP 30
+#define OBSTACLE_MIN_PERCENT 15 // Вероятности припятствия
+#define OBSTACLE_MAX_PERCENT 30
 #define RING_TRIGGER_COUNT 3
 
 // Структура для карты
@@ -166,6 +167,12 @@ void forestRingAdventure(void);
 
 int main(void) 
 {
+    // Что бы rand() при каждом запуске программы не выдавал одну и ту же последовательность 
+    srand((unsigned)time(NULL)); 
+    // time(NULL) - Выдает текущее время #include <time.h>
+    // unsigned - Приводит в целое
+    // srand() - Задаёт начальное значение для генератора псевдослучайных чисел
+
     // Инициализация основных переменных⁡ 
     int current_day = 1;
     int current_hour = 8;
@@ -498,7 +505,97 @@ void freeForest(ForestMap *m)
 // ГЕНЕРАЦИЯ СЛУЧАЙНОГО ЧИСЛА В ДИАПАЗОНЕ
 static int randInRange(int lo, int hi) 
 {
-    return lo + rand() % (hi - lo + 1);
+    return lo + rand() % (hi - lo + 1); // возвращает число в диапазоне [lo, hi]
 }
+
+// ФУНКЦИЯ ДЛЯ ЗАПОЛНЕНИЯ ForestMap И СОЗДАНИЯ НОВОГО УЧАСТКА ЛЕСА
+int generateForest(ForestMap *m) 
+{
+    // Размеры карты, может быть не квадрат! Используем функцию randInRange
+    // Может выпасть например h = 12, w = 27 (12x27 карта)
+    m -> height = randInRange(MIN_MAP, MAX_MAP); // Для высоты
+    m -> width = randInRange(MIN_MAP, MAX_MAP); // Для ширины
+
+    // Выделяем память с числами которые выпали для height и width
+    m -> cells = allocGrid(m -> height, m -> width); // Закидываем в allocGrid
+    if (m -> cells == NULL) return 0; // Если что-то не сработало
+
+    // [.] Заполняем карту точками ( . )
+    for (int count_h = 0; count_h < m -> height; count_h++)  // Перебор строк до последней
+    {
+        for (int count_w = 0; count_w < m -> width; count_w++) // Перебор столбцов до последнего
+        {
+            m -> cells[count_h][count_w] = '.'; // Заполняем точками
+        }
+    }
+
+    // [T] [R] Заполняем случайно деревьями и камнями. (T) и (R)
+    int pct = randInRange(OBSTACLE_MIN_PERCENT, OBSTACLE_MAX_PERCENT); // Cлучайный % (от 15 до 30)
+
+    for (int y = 0; y < m -> height; y++)  // Перебор строк до последней
+    {
+        for (int x = 0; x < m -> width; x++) // Перебор столбцов до последнего
+        {
+            if (rand() % 100 < pct) // Если выпадает клетке шанс получить припятствие, то ставим
+            {
+                m -> cells[y][x] = (rand() % 2) ? 'T' : 'R'; // Рандомим в нее T или R
+            }
+        }
+    }
+
+    // [%] Спавним героя
+    int placed = 0; // placed = 0 герой не поставлен, 1 - посвлен
+
+    // Пока !tries (то есть не поставлен персонаж) и tries < 1000 (ограничение)
+    /* Ограничение, потому что вся карта мб будет в T и R (не ну а чо нет) и  
+    тогда ставить некуда будет перса. Поэтому ограничение, что бы не упала программа */ 
+    for (int tries = 0; tries < 1000 && !placed; tries++) 
+    {
+        // Генерируем случайные координаты для спавна игрока
+        int y = randInRange(0, m -> height - 1); // x
+        int x = randInRange(0, m -> width - 1); // y
+        // -1 потому что если например height 12, то x ∈ [0, 11]
+
+        // Проверяем нет ли там припятствия T или R (точка ли там?)
+        if (m -> cells[y][x] == '.') 
+        {
+            m -> cells[y][x] = '@'; // Если '.', то ставим героя
+
+            // Записываем координаты игрока в hero_x, hero_y
+            m -> hero_x = x;
+            m -> hero_y = y; 
+            placed = 1; // Поставили
+        }
+    }
+
+    // Если не хватило 1000 попыток, то возвращаем 0 (не, ну а вдруг)
+    if (!placed) return 0; 
+
+    // [^] Создаем костер. Собственно также
+    // ==== КОСТЕР СОЗДАЕТСЯ ПОСЛЕ СПАВНА ГЕРОЯ ЧТО БЫ ОН НЕ ПОПАЛ НА ГЕРОЯ СРАЗУ === // 
+    int camp_ok = 0;
+    for (int tries = 0; tries < 1000 && !camp_ok; tries++) // Также
+    {
+        // Рандомом генерируем координаты
+        int y = randInRange(0, m -> height - 1); // y
+        int x = randInRange(0, m -> width - 1); // x  
+
+        // Проверяем нет ли там припятствия T или R (точка ли там?)
+        if (m -> cells[y][x] == '.') 
+        {
+            m -> cells[y][x] = '^'; // Если '.', то ставим костер
+            camp_ok = 1; // Поставили
+        }
+    }
+    // Если не хватило 1000 попыток, то возвращаем 0 (не, ну а вдруг)
+    if (!camp_ok) return 0;
+
+    // Сброс счетчиков
+    m -> edges_crossed = 0;
+    m -> portal_active = 0;
+    m -> on_camp = 0;
+    return 1;
+}
+
 
 void forestRingAdventure(void) {}
