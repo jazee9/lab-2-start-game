@@ -20,6 +20,20 @@
 #define MAX_MAP 30
 #define OBSTACLE_MIN_MAP 15 // Вероятности припятствия
 #define OBSTACLE_MAX_MAP 30
+#define RING_TRIGGER_COUNT 3
+
+// Структура для карты
+typedef struct 
+{
+    int height; // Высота карты
+    int width; // Ширина карты
+    int hero_x, hero_y; // Cтолбец и строка героя
+    char **cels; // Карта в динамической памяти
+    int edges_crossed; // Сколько раз герой вышел за край
+    int portal_active; // Активация портала. 0 - портала нет, 1 - есть
+    int on_camp; // Персонаж стоит на костре. 1 - стоит, 0 - стоит на обычной клетке (не костер)
+    int maps_passed; // Счетчик дальности от дома
+} ForestMap;
 
 // Стандартные названия (страховка, если будут проблемы с items.txt)
 const char *names[10] = {"Пусто", "Дерево", "Камень", "Семена пшеницы", "Железная руда", 
@@ -437,3 +451,40 @@ void analyzeLog(void)
     printf("ERROR: %d\n", error_count);
     printf("Результат записан в output.txt\n");
 }
+
+
+// ========== ЛАБА 4 ============== //
+
+// ФУНКЦИЯ ДЛЯ ВЫДЕЛЕНИЯ ДВУМЕРНОГО МАССИВА
+char **allocGrid(int h, int w) // Принимает высоту и ширину карты
+{
+    char **g = (char**)malloc((size_t)h * sizeof(char*)); // выделяем массив из h-указателей
+
+    if (g == NULL) return NULL; // Проверяет выделилась ли память, если нет - сразу выходим NULL
+
+    for (int i = 0; i < h; i++) // Перебор строк
+    {
+        g[i] = (char*)malloc((size_t)w * sizeof(char)); // Для каждой строки выделяется w
+
+        if (g[i] == NULL) // И опять проверка
+        {
+            for (int j = 0; j < i; j++) free(g[j]); // Если очередная строка не выделилась — откат всего
+            free(g); // Освобождаем массив указателей
+            return NULL;
+        }
+    }
+    return g; // вовзращаем указатель на массив, если все выделилось
+}
+
+// ФУНКЦИЯ ДЛЯ ОСВОБОЖДЕНИЯ ДВУМЕРНОГО МАССИВА
+void freeGrid(char **g, int h)
+{
+    if (g == NULL) return; // Проверка есть ли, что освобождать
+
+    // Если есть что
+    for (int i = 0; i < h; i++) free(g[i]); // Освобождаем каждую строку
+    free(g); // Освобождаем массив указателей
+}
+
+
+void forestRingAdventure(void) {}
