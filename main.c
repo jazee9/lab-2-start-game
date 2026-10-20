@@ -28,7 +28,7 @@ typedef struct
     int height; // Высота карты
     int width; // Ширина карты
     int hero_x, hero_y; // Cтолбец и строка героя
-    char **cels; // Карта в динамической памяти
+    char **cells; // Карта в динамической памяти
     int edges_crossed; // Сколько раз герой вышел за край
     int portal_active; // Активация портала. 0 - портала нет, 1 - есть
     int on_camp; // Персонаж стоит на костре. 1 - стоит, 0 - стоит на обычной клетке (не костер)
@@ -486,5 +486,19 @@ void freeGrid(char **g, int h)
     free(g); // Освобождаем массив указателей
 }
 
+// ФУНКЦИЯ ДЛЯ ОСВОБОЖДЕНИЯ ВСЕЙ КАРТЫ
+void freeForest(ForestMap *m)
+{
+    if (m == NULL) return; // Защита от NULL структуры
+
+    freeGrid(m -> cells, m -> height); // Освобождает двумерный массив cells через freeGrid
+    m -> cells = NULL; // обнуляет указатель после освобождения
+}
+
+// ГЕНЕРАЦИЯ СЛУЧАЙНОГО ЧИСЛА В ДИАПАЗОНЕ
+static int randInRange(int lo, int hi) 
+{
+    return lo + rand() % (hi - lo + 1);
+}
 
 void forestRingAdventure(void) {}
