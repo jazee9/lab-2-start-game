@@ -642,6 +642,73 @@ void maybeSpawnPortal(ForestMap *m)
     }
 }
 
+// ФУНКЦИЯ ДЛЯ ПЕРЕДВИЖЕНИЯ ИГРОКА ПО КАРТЕ
+int tryMoveForest(ForestMap *m, char dir) 
+{
+    // Для подсчетов
+    int dx = 0;
+    int dy = 0;
 
+    // Биндим кнопки
+    if (dir == 'W' || dir == 'w') dy = -1; // Вверх
+    else if (dir == 'S' || dir == 's') dy = 1; // Вниз
+    else if (dir == 'A' || dir == 'a') dx = -1; // Влево
+    else if (dir == 'D' || dir == 'd') dx = -1; // Вправо
+    else return 0; // Если нажал не то, ничего не происходит
+
+    // Новая координата
+    int nx = m -> hero_x + dx;
+    int ny = m -> hero_y + dy;
+
+    // 0 - не вышел за край, 1 - вышел за край
+    int crossed = 0;
+
+    // выходы за края
+    if (nx < 0) {nx = m -> width - 1; crossed = 1;} // Если вышел за ЛЕВЫЙ, тепаем у ПРАВОГО 
+    if (nx >= m -> width) {nx = 0; crossed = 1;} // Если вышел за ПРАВЫЙ, тепаем у ЛЕВОГО 
+    if (ny < 0) {ny = m -> height - 1; crossed = 1;} // Если вышел за ВЕРХНИЙ, тепаем у НИЖНЕГО 
+    if (ny >= m -> height) {nx = 0; crossed = 1;} // Если вышел за НИЖНИЙ, тепаем у ВЕРХНЕГО
+    
+    // Узнаем, что в той клетке, в которую идем
+    char c = m -> cells[ny][nx];
+
+    // Если припятствие [T] [R]
+    if (c == 'T' || c == 'R') {printf("Туда нельзя, припятствие!"); return 0;} 
+
+    // Переходы через край
+    if (crossed) 
+    {
+        m -> edges_crossed++;
+        printf("Вы пересекли край леса (переходов: %d)", m -> edges_crossed);
+    }
+
+    // Если перешел, то стираем героя со старой клетки и возвращаем туда [.] или [^]
+    m -> cells[m -> hero_y][m -> hero_y] = m -> on_camp ? '^' : '.';
+    m -> on_camp = 0; // Если был на костре и ушел с него
+
+    // Если портал [P]
+    if (c == 'P') 
+    {
+        m -> cells[ny][nx] == '@'; // Ставим героя
+        m -> hero_x = nx; m -> hero_y = ny; // Обнуляем координаты, тк будет новая карта
+        printf("P");
+        return 1;
+    }
+
+    // После проверки припятствий и прочего
+    m -> hero_x = nx; m -> hero_y = ny;
+
+    if (c == '^')  // Если там костер
+    {
+        m -> on_camp == 1;
+        m -> cells[ny][nx] = '@';
+
+        printf("Вы у костра, можно передохнуть (Q - выйти домой)");
+    }
+    else {m -> cells[ny][nx] = '@';} // Если там ничего
+
+    maybeSpawnPortal(m);
+    return 0;
+}
 
 void forestRingAdventure(void) {}
