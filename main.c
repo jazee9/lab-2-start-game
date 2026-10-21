@@ -601,13 +601,13 @@ int generateForest(ForestMap *m)
 void printForest(const ForestMap *m) 
 {
     // Заголовок
-    printf("\n--- Локация Лес-кольцо %dx%d. Пройденно карт: %d | Переходов через край: %d---\n", 
+    printf("\n--- Локация Лес-кольцо %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", 
         m -> width, m -> height, m -> maps_passed, m -> edges_crossed);
 
     // Перебираем
-    for (int x = 0; x < m -> width; x++) 
+    for (int y = 0; y < m -> width; y++) 
     {
-        for (int y = 0; y < m -> height; y++) 
+        for (int x = 0; x < m -> height; x++) 
             putchar(m -> cells[y][x]); // Печатаем putchar'ом по одной
         putchar('\n'); // Перевод строки
     }
@@ -653,7 +653,7 @@ int tryMoveForest(ForestMap *m, char dir)
     if (dir == 'W' || dir == 'w') dy = -1; // Вверх
     else if (dir == 'S' || dir == 's') dy = 1; // Вниз
     else if (dir == 'A' || dir == 'a') dx = -1; // Влево
-    else if (dir == 'D' || dir == 'd') dx = -1; // Вправо
+    else if (dir == 'D' || dir == 'd') dx = 1; // Вправо
     else return 0; // Если нажал не то, ничего не происходит
 
     // Новая координата
@@ -667,7 +667,7 @@ int tryMoveForest(ForestMap *m, char dir)
     if (nx < 0) {nx = m -> width - 1; crossed = 1;} // Если вышел за ЛЕВЫЙ, тепаем у ПРАВОГО 
     if (nx >= m -> width) {nx = 0; crossed = 1;} // Если вышел за ПРАВЫЙ, тепаем у ЛЕВОГО 
     if (ny < 0) {ny = m -> height - 1; crossed = 1;} // Если вышел за ВЕРХНИЙ, тепаем у НИЖНЕГО 
-    if (ny >= m -> height) {nx = 0; crossed = 1;} // Если вышел за НИЖНИЙ, тепаем у ВЕРХНЕГО
+    if (ny >= m -> height) {ny = 0; crossed = 1;} // Если вышел за НИЖНИЙ, тепаем у ВЕРХНЕГО
     
     // Узнаем, что в той клетке, в которую идем
     char c = m -> cells[ny][nx];
@@ -683,13 +683,13 @@ int tryMoveForest(ForestMap *m, char dir)
     }
 
     // Если перешел, то стираем героя со старой клетки и возвращаем туда [.] или [^]
-    m -> cells[m -> hero_y][m -> hero_y] = m -> on_camp ? '^' : '.';
+    m -> cells[m -> hero_y][m -> hero_x] = m -> on_camp ? '^' : '.';
     m -> on_camp = 0; // Если был на костре и ушел с него
 
     // Если портал [P]
     if (c == 'P') 
     {
-        m -> cells[ny][nx] == '@'; // Ставим героя
+        m -> cells[ny][nx] = '@'; // Ставим героя
         m -> hero_x = nx; m -> hero_y = ny; // Обнуляем координаты, тк будет новая карта
         return 1;
     }
@@ -710,7 +710,7 @@ int tryMoveForest(ForestMap *m, char dir)
     return 0;
 }
 
-// [10, 5-ЫЙ ВАРИАНТ] ОТПРАВИТСЯ В ПРИКЛЧЕНИЕ (ЛЕС-КОЛЬЦО) 
+// [10, 5-ЫЙ ВАРИАНТ] ОТПРАВИТСЯ В ПРИКЛЮЕНИЕ (ЛЕС-КОЛЬЦО) 
 // ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
 void forestRingAdventure(void) 
 {
@@ -741,10 +741,10 @@ void forestRingAdventure(void)
         // Если нажал Q (выход на костре)
         if (ch == 'Q' || ch == 'q') 
         {
-            if (m.on_camp == '1') // Если стоя на костре
+            if (m.on_camp == 1) // Если стоя на костре
             {
                 printf("Вы отдохнули у костра и вернулись домой.\n");
-                running == 0; // Выходим из приключения
+                running = 0; // Выходим из приключения
             }
             // Если пытается не на костре
             else {printf("Выйти домой можно только стоя на костре (^).\n");} continue;
@@ -763,8 +763,7 @@ void forestRingAdventure(void)
             if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
         }
 
-        // Читсим в конце в любом случае
-        freeForest(&m); 
-    }
+    } freeForest(&m); // Читсим в конце в любом случае
+    
 
 }
