@@ -691,7 +691,6 @@ int tryMoveForest(ForestMap *m, char dir)
     {
         m -> cells[ny][nx] == '@'; // Ставим героя
         m -> hero_x = nx; m -> hero_y = ny; // Обнуляем координаты, тк будет новая карта
-        printf("P");
         return 1;
     }
 
@@ -711,4 +710,61 @@ int tryMoveForest(ForestMap *m, char dir)
     return 0;
 }
 
-void forestRingAdventure(void) {}
+// [10, 5-ЫЙ ВАРИАНТ] ОТПРАВИТСЯ В ПРИКЛЧЕНИЕ (ЛЕС-КОЛЬЦО) 
+// ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
+void forestRingAdventure(void) 
+{
+    ForestMap m; // Структура
+    memset(&m, 0, sizeof(m)); // Зануляет все поля структуры ForestMap
+    m.maps_passed = 1; // Счетчик пройденных карт
+
+    // Проверка запуска generateForest
+    if (!generateForest(&m)) 
+    {
+        printf("Ошибка генерации леса!\n");
+        freeForest(&m); // Отчищаем из памяти
+        return;
+    }
+
+    // Пока 1 - цикл крутится (приключение), 0 - выходим
+    int running = 1;
+
+    // Главный цикл
+    while (running) 
+    {
+        printForest(&m); // Рисуем карту, подсказки
+        int ch = getchar(); // Чтение символа
+
+        // Cъедает остаток строки до \n или EOF
+        int t; while ((t = getchar()) != '\n' && t != EOF); 
+
+        // Если нажал Q (выход на костре)
+        if (ch == 'Q' || ch == 'q') 
+        {
+            if (m.on_camp == '1') // Если стоя на костре
+            {
+                printf("Вы отдохнули у костра и вернулись домой.\n");
+                running == 0; // Выходим из приключения
+            }
+            // Если пытается не на костре
+            else {printf("Выйти домой можно только стоя на костре (^).\n");} continue;
+        }
+
+        // Движение, если даст 0 - обычный ход или припятствие, если 1 - наступил на портал
+        int res = tryMoveForest(&m, (char)ch);
+
+        // Если наступил на портал
+        if (res) 
+        {
+            m.maps_passed++; // +1 пройденная карта
+            freeForest(&m); // Чистим
+
+            // Не получилось сгенерировать новую карту
+            if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
+        }
+
+        // Читсим в конце в любом случае
+        freeForest(&m); 
+    }
+
+}
