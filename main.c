@@ -601,19 +601,19 @@ int generateForest(ForestMap *m)
 void printForest(const ForestMap *m) 
 {
     // Заголовок
-    printf("\n--- Локация Лес-кольцо %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", 
+    printf("\n\n--- Локация Лес-кольцо %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", 
         m -> width, m -> height, m -> maps_passed, m -> edges_crossed);
 
     // Перебираем
-    for (int y = 0; y < m -> width; y++) 
+    for (int y = 0; y < m -> height; y++) 
     {
-        for (int x = 0; x < m -> height; x++) 
+        for (int x = 0; x < m -> width; x++) 
             putchar(m -> cells[y][x]); // Печатаем putchar'ом по одной
         putchar('\n'); // Перевод строки
     }
 
     // Инструкция по управлению
-    printf("W/A/S/D - идти. Q - домой (только на ^)\n");
+    printf("\nW/A/S/D - идти. Q - домой (только на ^)\n");
 }
 
 // [P] СПАВН ПОРТАЛА
@@ -636,7 +636,7 @@ void maybeSpawnPortal(ForestMap *m)
             m -> portal_active = 1; // Меняем m -> portal_active на 1
 
             // Уведомляем игрока о появлении портала
-            printf("Вы заблудились... На карте появился портал (P)\n");
+            printf("\nВы заблудились... На карте появился портал (P)\n");
             return;
         }
     }
@@ -673,7 +673,7 @@ int tryMoveForest(ForestMap *m, char dir)
     char c = m -> cells[ny][nx];
 
     // Если припятствие [T] [R]
-    if (c == 'T' || c == 'R') {printf("Туда нельзя, припятствие!"); return 0;} 
+    if (c == 'T' || c == 'R') {printf("\nТуда нельзя, припятствие!"); return 0;} 
 
     // Переходы через край
     if (crossed) 
@@ -699,10 +699,10 @@ int tryMoveForest(ForestMap *m, char dir)
 
     if (c == '^')  // Если там костер
     {
-        m -> on_camp == 1;
+        m -> on_camp = 1;
         m -> cells[ny][nx] = '@';
 
-        printf("Вы у костра, можно передохнуть (Q - выйти домой)");
+        printf("\nВы у костра, можно передохнуть (Q - выйти домой)\n");
     }
     else {m -> cells[ny][nx] = '@';} // Если там ничего
 
@@ -747,7 +747,8 @@ void forestRingAdventure(void)
                 running = 0; // Выходим из приключения
             }
             // Если пытается не на костре
-            else {printf("Выйти домой можно только стоя на костре (^).\n");} continue;
+            else {printf("Выйти домой можно только стоя на костре (^).\n");} 
+            continue;
         }
 
         // Движение, если даст 0 - обычный ход или припятствие, если 1 - наступил на портал
@@ -763,7 +764,6 @@ void forestRingAdventure(void)
             if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
         }
 
-    } freeForest(&m); // Читсим в конце в любом случае
-    
-
+    } 
+    freeForest(&m); // Чистим в конце в любом случае
 }
