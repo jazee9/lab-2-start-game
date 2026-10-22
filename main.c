@@ -605,7 +605,7 @@ int generateForest(ForestMap *m)
         int x = randInRange(0, m -> width - 1); // x  
 
         // Проверяем нет ли там припятствия T или R (точка ли там?)
-        if (m -> cells[y][x] == '.') 
+        if (m -> cells[y][x] == '.' && hasFreeNeighbor(m, x, y))
         {
             m -> cells[y][x] = '^'; // Если '.', то ставим костер
             camp_ok = 1; // Поставили
@@ -654,7 +654,7 @@ void maybeSpawnPortal(ForestMap *m)
         int x = randInRange(0, m -> width - 1); // x  
 
         // Проверяем точка ли там
-        if (m -> cells[y][x] == '.') 
+        if (m -> cells[y][x] == '.' && hasFreeNeighbor(m, x, y)) 
         {
             m -> cells[y][x] = 'P'; // Ставим P, ели свободно
             m -> portal_active = 1; // Меняем m -> portal_active на 1
