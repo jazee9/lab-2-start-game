@@ -508,6 +508,30 @@ static int randInRange(int lo, int hi)
     return lo + rand() % (hi - lo + 1); // возвращает число в диапазоне [lo, hi]
 }
 
+// ФУНКЦИЯ ДЛЯ ПРОВЕРКИ СВОБОДНОГО СОСЕДА У СПАВНА ИГРОКА, КОСТРА И ПОРТАЛА
+// ЧТО БЫ ОНИ НЕ БЫЛИ В ЛОВУШКЕ
+static int hasFreeNeighbor(ForestMap *m, int x, int y) 
+{
+    // 4 стороны в округ
+    int dx[] = {0, 0, -1, 1};
+    int dy[] = {-1, 1, 0, 0};
+
+    // Перебираем каждую сторону и смотрим
+    for (int i = 0; i < 4; i++) 
+    {
+        // Координаты соседов
+        int nx = x + dx[i];
+        int ny = y + dy[i];
+
+        // Если сосед за пределаи карты - не считать
+        if (nx < 0 || nx >= m -> width || ny < 0 || ny >= m -> height) continue;
+
+        // Если есть хотя бы 1 сосед [.] - выходим из hasFreeNeighbor с 1 - успех
+        if (m -> cells[ny][nx] == '.') return 1;
+    }
+    return 0; // Если в округ припятствия, после того как все 4 просмотрели
+}
+
 // ФУНКЦИЯ ДЛЯ ЗАПОЛНЕНИЯ ForestMap И СОЗДАНИЯ НОВОГО УЧАСТКА ЛЕСА
 int generateForest(ForestMap *m) 
 {
@@ -520,7 +544,7 @@ int generateForest(ForestMap *m)
     m -> cells = allocGrid(m -> height, m -> width); // Закидываем в allocGrid
     if (m -> cells == NULL) return 0; // Если что-то не сработало
 
-    // [.] Заполняем карту точками ( . )
+    // [.] Заполняем карту точками
     for (int count_h = 0; count_h < m -> height; count_h++)  // Перебор строк до последней
     {
         for (int count_w = 0; count_w < m -> width; count_w++) // Перебор столбцов до последнего
@@ -532,7 +556,7 @@ int generateForest(ForestMap *m)
     // [T] [R] Заполняем случайно деревьями и камнями. (T) и (R)
     int pct = randInRange(OBSTACLE_MIN_PERCENT, OBSTACLE_MAX_PERCENT); // Cлучайный % (от 15 до 30)
 
-    for (int y = 0; y < m -> height; y++)  // Перебор строк до последней
+    for (int y = 0; y < m -> height; y++) // Перебор строк до последней
     {
         for (int x = 0; x < m -> width; x++) // Перебор столбцов до последнего
         {
@@ -546,10 +570,10 @@ int generateForest(ForestMap *m)
     // [%] Спавним героя
     int placed = 0; // placed = 0 герой не поставлен, 1 - посвлен
 
-    // Пока !tries (то есть не поставлен персонаж) и tries < 1000 (ограничение)
+    // Пока !tries (то есть не поставлен персонаж) и tries < 2000 (ограничение)
     /* Ограничение, потому что вся карта мб будет в T и R (не ну а чо нет) и  
     тогда ставить некуда будет перса. Поэтому ограничение, что бы не упала программа */ 
-    for (int tries = 0; tries < 1000 && !placed; tries++) 
+    for (int tries = 0; tries < 2000 && !placed; tries++) 
     {
         // Генерируем случайные координаты для спавна игрока
         int y = randInRange(0, m -> height - 1); // x
@@ -557,7 +581,7 @@ int generateForest(ForestMap *m)
         // -1 потому что если например height 12, то x ∈ [0, 11]
 
         // Проверяем нет ли там припятствия T или R (точка ли там?)
-        if (m -> cells[y][x] == '.') 
+        if (m -> cells[y][x] == '.' && hasFreeNeighbor(m, x, y)) 
         {
             m -> cells[y][x] = '@'; // Если '.', то ставим героя
 
@@ -568,7 +592,7 @@ int generateForest(ForestMap *m)
         }
     }
 
-    // Если не хватило 1000 попыток, то возвращаем 0 (не, ну а вдруг)
+    // Если не хватило 2000 попыток, то возвращаем 0 (не, ну а вдруг)
     if (!placed) return 0; 
 
     // [^] Создаем костер. Собственно также
