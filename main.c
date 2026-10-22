@@ -637,7 +637,7 @@ void printForest(const ForestMap *m)
     }
 
     // Инструкция по управлению
-    printf("\nW/A/S/D - идти. Q - домой (только на ^)\n");
+    printf("\nW/A/S/D - идти. Q - домой (только на ^)\n\n");
 }
 
 // [P] СПАВН ПОРТАЛА
@@ -667,17 +667,21 @@ void maybeSpawnPortal(ForestMap *m)
 }
 
 // ФУНКЦИЯ ДЛЯ ПЕРЕДВИЖЕНИЯ ИГРОКА ПО КАРТЕ
-int tryMoveForest(ForestMap *m, char dir) 
+int tryMoveForest(ForestMap *m, const char *dir) 
 {
     // Для подсчетов
     int dx = 0;
     int dy = 0;
 
     // Биндим кнопки
-    if (dir == 'W' || dir == 'w') dy = -1; // Вверх
-    else if (dir == 'S' || dir == 's') dy = 1; // Вниз
-    else if (dir == 'A' || dir == 'a') dx = -1; // Влево
-    else if (dir == 'D' || dir == 'd') dx = 1; // Вправо
+    if (dir[0] == 'W' || dir[0] == 'w' || strncmp(dir, "Ц", 2) == 0 || 
+        strncmp(dir, "ц", 2) == 0) dy = -1; // Вверх
+    else if (dir[0] == 'S' || dir[0] == 's' || strncmp(dir, "Ы", 2) == 0 || 
+        strncmp(dir, "ы", 2) == 0) dy = 1; // Вниз
+    else if (dir[0] == 'A' || dir[0] == 'a' || strncmp(dir, "Ф", 2) == 0 || 
+        strncmp(dir, "ф", 2) == 0) dx = -1; // Влево
+    else if (dir[0] == 'D' || dir[0] == 'd' || strncmp(dir, "В", 2) == 0 || 
+        strncmp(dir, "в", 2) == 0) dx = 1; // Вправо
     else return 0; // Если нажал не то, ничего не происходит
 
     // Новая координата
@@ -697,13 +701,13 @@ int tryMoveForest(ForestMap *m, char dir)
     char c = m -> cells[ny][nx];
 
     // Если припятствие [T] [R]
-    if (c == 'T' || c == 'R') {printf("\nТуда нельзя, припятствие!"); return 0;} 
+    if (c == 'T' || c == 'R') {printf("\nТуда нельзя, припятствие!\n"); return 0;} 
 
     // Переходы через край
     if (crossed) 
     {
         m -> edges_crossed++;
-        printf("Вы пересекли край леса (переходов: %d)", m -> edges_crossed);
+        printf("Вы пересекли край леса (переходов: %d)\n", m -> edges_crossed);
     }
 
     // Если перешел, то стираем героя со старой клетки и возвращаем туда [.] или [^]
@@ -757,13 +761,18 @@ void forestRingAdventure(void)
     while (running) 
     {
         printForest(&m); // Рисуем карту, подсказки
-        int ch = getchar(); // Чтение символа
+        // int ch = getchar(); // Чтение символа (работала только с WASD)
+
+        // Читаем символ (ход)
+        printf("Ход: ");
+        char ch[10];
+        if (fgets(ch, sizeof(ch), stdin) == NULL) break;
 
         // Cъедает остаток строки до \n или EOF
-        int t; while ((t = getchar()) != '\n' && t != EOF); 
+        // int t; while ((t = getchar()) != '\n' && t != EOF); 
 
         // Если нажал Q (выход на костре)
-        if (ch == 'Q' || ch == 'q') 
+        if (ch[0] == 'Q' || ch[0] == 'q' || (strncmp(ch, "Й", 2) == 0) || (strncmp(ch, "й", 2) == 0))  
         {
             if (m.on_camp == 1) // Если стоя на костре
             {
@@ -776,7 +785,7 @@ void forestRingAdventure(void)
         }
 
         // Движение, если даст 0 - обычный ход или припятствие, если 1 - наступил на портал
-        int res = tryMoveForest(&m, (char)ch);
+        int res = tryMoveForest(&m, ch);
 
         // Если наступил на портал
         if (res) 
