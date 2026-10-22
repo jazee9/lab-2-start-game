@@ -41,6 +41,8 @@ const char *names[10] = {"Пусто", "Дерево", "Камень", "Семе
     "Золотая руда", "Алмазная руда", 
     "Вода", "Ягоды", "Веревка"};
 
+char status_message[256] = ""; // Глобальный буфер для сообщений
+
 // ⁡⁢⁣========= ДЛЯ НЕКОРЕКТНЫХ ВВОДОВ ================⁡ //
 
 // Не дает программе упасть если ввели не число 
@@ -625,7 +627,7 @@ int generateForest(ForestMap *m)
 void printForest(const ForestMap *m) 
 {
     // Заголовок
-    printf("\n\n--- Локация Лес-кольцо %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", 
+    printf("\n--- Локация Лес-кольцо %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", 
         m -> width, m -> height, m -> maps_passed, m -> edges_crossed);
 
     // Перебираем
@@ -637,7 +639,13 @@ void printForest(const ForestMap *m)
     }
 
     // Инструкция по управлению
-    printf("\nW/A/S/D - идти. Q - домой (только на ^)\n\n");
+    printf("\nW/A/S/D - идти. Q - домой (только на ^)\n");
+
+    // Вывод подсказок под картой
+    if (status_message[0] != '\0') {
+        printf("\n>>> %s <<<\n", status_message);
+    }
+    printf("\n");
 }
 
 // [P] СПАВН ПОРТАЛА
@@ -660,7 +668,7 @@ void maybeSpawnPortal(ForestMap *m)
             m -> portal_active = 1; // Меняем m -> portal_active на 1
 
             // Уведомляем игрока о появлении портала
-            printf("\nВы заблудились... На карте появился портал (P)\n");
+            strcpy(status_message, "Вы заблудились... На карте появился портал (P)");
             return;
         }
     }
@@ -701,13 +709,17 @@ int tryMoveForest(ForestMap *m, const char *dir)
     char c = m -> cells[ny][nx];
 
     // Если припятствие [T] [R]
-    if (c == 'T' || c == 'R') {printf("\nТуда нельзя, припятствие!\n"); return 0;} 
+    if (c == 'T' || c == 'R') 
+    {
+        strcpy(status_message, "Туда нельзя, препятствие!");
+        return 0;
+    } 
 
     // Переходы через край
     if (crossed) 
     {
         m -> edges_crossed++;
-        printf("Вы пересекли край леса (переходов: %d)\n", m -> edges_crossed);
+        sprintf(status_message, "Вы пересекли край леса (переходов: %d)", m->edges_crossed);
     }
 
     // Если перешел, то стираем героя со старой клетки и возвращаем туда [.] или [^]
@@ -730,8 +742,9 @@ int tryMoveForest(ForestMap *m, const char *dir)
         m -> on_camp = 1;
         m -> cells[ny][nx] = '@';
 
-        printf("\nВы у костра, можно передохнуть (Q - выйти домой)\n");
+        strcpy(status_message, "Вы у костра, можно передохнуть (Q - выйти домой)");
     }
+
     else {m -> cells[ny][nx] = '@';} // Если там ничего
 
     maybeSpawnPortal(m);
@@ -742,61 +755,62 @@ int tryMoveForest(ForestMap *m, const char *dir)
 // ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
 void forestRingAdventure(void) 
 {
-    ForestMap m; // Структура
-    memset(&m, 0, sizeof(m)); // Зануляет все поля структуры ForestMap
-    m.maps_passed = 1; // Счетчик пройденных карт
+    ForestMap m; // Запускает структуру
+    memset(&m, 0, sizeof(m)); // Дает 0 всем в структуре
+    m.maps_passed = 1; 
+    status_message[0] = '\0'; // Отчистка буфера
 
-    // Проверка запуска generateForest
     if (!generateForest(&m)) 
     {
         printf("Ошибка генерации леса!\n");
-        freeForest(&m); // Отчищаем из памяти
+        freeForest(&m); 
         return;
     }
 
-    // Пока 1 - цикл крутится (приключение), 0 - выходим
     int running = 1;
+    system("clear");
+    printForest(&m); // Рисуем первую карту
 
-    // Главный цикл
     while (running) 
     {
-        printForest(&m); // Рисуем карту, подсказки
-        // int ch = getchar(); // Чтение символа (работала только с WASD)
-
-        // Читаем символ (ход)
-        printf("Ход: ");
+        // Читаем ход (карта уже на экране, сообщений нет)
+        printf("\nХод: ");
         char ch[10];
         if (fgets(ch, sizeof(ch), stdin) == NULL) break;
 
-        // Cъедает остаток строки до \n или EOF
-        // int t; while ((t = getchar()) != '\n' && t != EOF); 
+        status_message[0] = '\0'; // Очищаем сообщение перед ходом
 
-        // Если нажал Q (выход на костре)
+        // [Q] (выход)
         if (ch[0] == 'Q' || ch[0] == 'q' || (strncmp(ch, "Й", 2) == 0) || (strncmp(ch, "й", 2) == 0))  
         {
-            if (m.on_camp == 1) // Если стоя на костре
+            if (m.on_camp == 1) // На костре?
             {
                 printf("Вы отдохнули у костра и вернулись домой.\n");
-                running = 0; // Выходим из приключения
+                running = 0; 
             }
-            // Если пытается не на костре
-            else {printf("Выйти домой можно только стоя на костре (^).\n");} 
-            continue;
+            else 
+            {
+                strcpy(status_message, "Выйти домой можно только стоя на костре (^).");
+
+                system("clear");
+                printForest(&m);
+            } 
+            continue; // Не перерисовываем карту, просто покажем сообщение (или выйдем)
         }
 
-        // Движение, если даст 0 - обычный ход или припятствие, если 1 - наступил на портал
+        // Движение
         int res = tryMoveForest(&m, ch);
 
-        // Если наступил на портал
         if (res) 
         {
-            m.maps_passed++; // +1 пройденная карта
-            freeForest(&m); // Чистим
-
-            // Не получилось сгенерировать новую карту
+            m.maps_passed++; 
+            freeForest(&m); 
             if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
         }
 
+        // Очищаем экран и рисуем карту + новое сообщение (если есть)
+        system("clear");
+        printForest(&m);
     } 
-    freeForest(&m); // Чистим в конце в любом случае
+    freeForest(&m); 
 }
