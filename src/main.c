@@ -505,7 +505,8 @@ void freeForest(ForestMap *m)
 }
 
 // ГЕНЕРАЦИЯ СЛУЧАЙНОГО ЧИСЛА В ДИАПАЗОНЕ
-static int randInRange(int lo, int hi) 
+static int 
+randInRange(int lo, int hi) 
 {
     return lo + rand() % (hi - lo + 1); // возвращает число в диапазоне [lo, hi]
 }
