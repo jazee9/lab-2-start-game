@@ -10,7 +10,7 @@
 // ==== Константы ==== //
 
 // Глобальный буфер для сообщений
-char status_message[256];
+extern char status_message[256];
 
 // == Карта == //
 // Размер
@@ -24,6 +24,15 @@ char status_message[256];
 
 // ==== Структуры ==== //
 
+// Структура для биомов
+typedef enum 
+{
+    BIOME_WOODS = 0, // Редколесье
+    BIOME_SWAMP,     // Топь
+    BIOME_RUINS,     // Каменные руины
+    BIOME_CRYSTAL    // Кристальная пещера
+} Biome;
+
 // Структура для карты
 typedef struct 
 {
@@ -35,6 +44,7 @@ typedef struct
     int portal_active; // Активация портала. 0 - портала нет, 1 - есть
     int on_camp; // Персонаж стоит на костре. 1 - стоит, 0 - стоит на обычной клетке (не костер)
     int maps_passed; // Счетчик дальности от дома (сколько пройденно карт)
+    Biome biome;
 } ForestMap;
 
 // ==== Прототипы функций ==== //
@@ -45,6 +55,6 @@ int generateForest(ForestMap *m);
 void printForest(const ForestMap *m);
 void maybeSpawnPortal(ForestMap *m);
 int tryMoveForest(ForestMap *m, const char *dir);
-void forestRingAdventure(void);
+void forestRingAdventure(Player *p);
 
 #endif

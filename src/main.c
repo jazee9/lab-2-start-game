@@ -1,4 +1,4 @@
-// === ИМПОРТ ===⁡ //
+// ======== ИМПОРТ ========⁡ //
 
 // Библиотеки
 #include <time.h> // Для рандомных чисел
@@ -16,20 +16,6 @@
 // Для имени фермера
 #define MAX_FARMER_NAME 32 // Имя фермера: 31 символ + '\0'
 
-// ============ ФУНКЦИЯ ДЛЯ ИМЕНИ ФЕРМЕРА ============ //
-
-// Спрашиваем имя для фермера, пока не введут
-void readFarmerName(char *name)
-{
-    do
-    {
-        printf("Как зовут фермера? ");
-        readLine(name, MAX_FARMER_NAME);
-        if (strlen(name) == 0)
-            printf("Имя не может быть пустым!\n");
-    } while (strlen(name) == 0 && !feof(stdin));
-}
-
 
 // ========= ПРОТОТИПЫ ======== //
 void printMenu(const char *farmer);
@@ -41,7 +27,7 @@ void deleteItem(int inventory[]);
 void clearTrash(int inventory[]);
 void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
-
+void timeMenu(Player *p, int *day, int *hour);
 
 // ====================== MAIN ====================⁡ //
 
@@ -57,17 +43,15 @@ int main(void)
     int current_day = 1;
     int current_hour = 8;
     char item_names[MAX_ITEMS][MAX_NAME_LEN]; // Создаем таблицу для названий предметов 10/32 - 1 ('\0')
-    int inventory[SIZE] = {2, 3, 4, 4, 0, 0, 0, 0, 0, 0}; // Изначальный инвентарь 
     int choice; 
 
-    char farmer[MAX_FARMER_NAME]; // Для имени фермера
-    readFarmerName(farmer); // Запрашиваем имя фермера
+    Player *player = NULL; // Cоздаем указатель на игрока
 
     loadItemNames(item_names, "items.txt"); // Читаем названия из items.txt
 
     do  
     {
-        printMenu(farmer); // Запуск меню
+        printMenu(player ? player->name : "Не создан"); 
         choice = readInt(); // Выбор варианта пользователем
 
         switch (choice) 
@@ -76,48 +60,144 @@ int main(void)
         // ⁡⁢⁣Если введена неверная цифра для выбора пункта меню
         default: printf("Нет такого пункта меню.\n"); break;
 
-        // ⁡⁢⁣=== CASES ===⁡ //
-        case 0: printf("Выход...\n"); break;                  // ВЫХОД 
-        case 1: showTime(current_day, current_hour); break;   // ПОСМОТРЕТЬ ВРЕМЯ 
-        case 2: workTime(&current_day, &current_hour); break; // ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
-        case 3: showInventory(inventory, item_names); break;  // ПОСМОТРЕТЬ ИНВЕНТАРЬ        
-        case 4: putItem(inventory, item_names); break;        // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
-        case 5: deleteItem(inventory); break;                 // ВЫБРОСИТЬ ПРЕДМЕТ
-        case 6: clearTrash(inventory); break;                 // ОЧИСТКА ОТ МУСОРА (5 ВАРИАНТ)
-        case 7: findItem(inventory, item_names); break;       // ПОИСК ПРЕДМЕТА В РЮКЗАКЕ ПО НАЗВАНИЮ
-        case 8: write_diary(farmer, current_day, current_hour, inventory, item_names); break; // ЗАПИСЬ В ДНЕВНИК 
-        case 9: analyzeLog(); break; 
-        case 10: forestRingAdventure(); break;                // В ПРИКЛЮЧЕНИЕ (5-ЫЙ ВАРИАНТ)
-        }
-    } while (choice != 0);
+        // ⁡⁢⁣========= CASES =========⁡ //
+
+        // ВЫХОД 
+        case 0: printf("Выход...\n");  
+                free_player(player); break;  
+
+        // СОЗДАТЬ / ПЕРЕСОЗДАТЬ        
+        case 1: if (player != NULL) 
+                    {
+                        printf("Персонаж уже существует! Удалить его? (1 - Да, 0 - Нет): ");
+                        if (readInt() == 1) 
+                        {
+                            free_player(player);
+                            player = NULL;
+                        } else break;
+                    }
+                player = create_player(); break;
+ 
+        // КАРТОЧКА ПЕРСОНАЖА 
+        case 2: if (player == 0) {printf("Персонаж не создан!\n"); break;}
+                print_player_card(player, item_names); break;
+        
+        // УПРАВЛЕНИЕ ВРЕМЕНЕМ
+        case 3: timeMenu(player, &current_day, &current_hour); break; // Вызов подменню
+        
+        // ПОСМОТРЕТЬ ИНВЕНТАРЬ
+        case 4: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                printf("\n> Инвентарь:\n");
+                showInventory(player -> inventory, item_names); break;
+
+        // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
+        case 5: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                putItem(player -> inventory, item_names); break; 
+
+        // ВЫБРОСИТЬ ПРЕДМЕТ
+        case 6: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                deleteItem(player -> inventory); break; 
+
+        // ОЧИСТИТЬ МУСОР ИНВЕНТАРЯ
+        case 7: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                clearTrash(player -> inventory); break;
+
+        // НАЙТИ ПРЕДМЕТ В ИНВЕНТАРЕ
+        case 8: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                findItem(player -> inventory, item_names); break; 
+                
+        // ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА
+        case 9: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                write_diary(player -> name, current_day, current_hour, player -> inventory, item_names); break;
+
+        // АНАЛИЗ ЛОГА
+        case 10: analyzeLog(); break; 
+
+        // ПРИКЛЮЧЕНИЕ
+        case 11: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                forestRingAdventure(player); break;
+        } 
+    } while (choice != 0); // <--- А ЭТА ЗАКРЫВАЕТ DO
     return 0;
 }
 
-// ⁡⁢⁣====== МЕНЮ ========⁡ //
+// ⁡⁢⁣====== ВЫВОД МЕНЮ ========⁡ //
 
 void printMenu(const char *farmer) 
 {
-    printf("\n====== МЕНЮ | Фермер: %s ======", farmer);
-    printf("\n1.  - Посмотреть на часы\n");
-    printf("2.  - Промотать время (Поработать)\n");
-    printf("3.  - Посмотреть инвентарь\n");
-    printf("4.  - Положить предмет в слот\n");
-    printf("5.  - Выбросить предмет\n");
-    printf("6.  - Очистить мусор\n"); // Мой 5-ый вариант 
-    printf("7.  - Найти предмет в инвентаре\n"); // От сюда лаба 3
-    printf("8.  - Записать состояние в дневник фермера\n");
-    printf("9.  - Анализ лога\n");
-    printf("10. - Отправится в приключение (Лес-кольцо)\n");  // От сюда лаба 4 (5-ый вариант)
+    printf("\n====== МЕНЮ | Фермер: %s ======\n", farmer);
+    printf("\n1.  - Создать / пересоздать персонажа\n");
+    printf("2.  - Карточка персонажа\n");
+    printf("3.  - Управление временем\n"); 
+    printf("4.  - Посмотреть инвентарь\n");
+    printf("5.  - Положить предмет в слот\n");
+    printf("6.  - Выбросить предмет\n");
+    printf("7.  - Очистить мусор из инвентаря\n");
+    printf("8.  - Найти предмет в инвентаре\n");
+    printf("9.  - Записать состояние в дневник фермера\n");
+    printf("10. - Анализ лога\n");
+    printf("11. - Отправится в приключение (Лес-кольцо)\n");
     printf("0.  - Выход\n");
-    printf("Выбор: ");
+    printf("\nВыбор: ");
 }
 
 // ================ ФУНКЦИИ ================ //
 
-// [case: 1] ПОСМОТРЕТЬ ВРЕМЯ
+// Для [case: 3]
+void timeMenu(Player *p, int *day, int *hour) 
+{
+    int choice;
+    do {
+        // Менюшка
+        printf("\n--- УПРАВЛЕНИЕ ВРЕМЕНЕМ ---\n");
+        printf("1. - Посмотреть на часы\n");
+        printf("2. - Пропустить время (Поработать)\n");
+        printf("3. - Отдых (Лечь спать)\n");
+        printf("0. - Назад в главное меню\n");
+        printf("Выбор: ");
+
+        choice = readInt();
+
+        switch (choice) 
+        {
+            case 0: 
+                break; // Выход в главное меню
+                
+            case 1: 
+                showTime(*day, *hour); 
+                break;
+                
+            case 2: 
+                workTime(day, hour); 
+                break;
+                
+            case 3: 
+                if (p == NULL) 
+                {
+                    printf("Персонаж не создан! Сначала создайте его в главном меню.\n");
+                } 
+                else 
+                {
+                    printf("Вы ложитесь спать...\n");
+                    *day += 1;
+                    *hour = 8;
+                    p -> hp = p -> max_hp;
+                    p -> stamina = p -> max_stamina;
+                    printf("Наступило утро! День %d, время: %d:00\n", *day, *hour);
+                    printf("Здоровье и выносливость полностью восстановлены!\n");
+                } 
+                break;
+                
+            default: 
+                printf("Нет такого пункта.\n");
+        }
+    } while (choice != 0);
+}
+
+// ПОСМОТРЕТЬ ВРЕМЯ
 void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
 
-// [case: 2] ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
+// ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
 void workTime(int *day, int *hour)
 { 
     printf("Сколько часов поработать?: "); int h = readInt(); // Спрашиваем у пользователя
@@ -130,7 +210,7 @@ void workTime(int *day, int *hour)
     showTime(*day, *hour); // Выводим время после перемотки
 }
 
-// [case: 8] ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА (diary.txt)
+// ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА (diary.txt)
 void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
 {
     FILE *f = fopen("diary.txt", "a");

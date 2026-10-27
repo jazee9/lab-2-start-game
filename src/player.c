@@ -6,6 +6,57 @@
 
 // ================ ФУНКЦИИ ================ //
 
+// ======== ДИНАМИЧЕСКИЙ ИГРОК ======== //
+
+// [case: 1] СОЗДАНИЕ ПЕРСОНАЖА
+Player* create_player(void) 
+{
+    Player *p = (Player*)malloc(sizeof(Player)); // Память
+    if (!p) return NULL; // Проверка, что память выделилась
+
+    printf("Как зовут фермера? ");
+    readLine(p -> name, MAX_NAME_LEN); // Записываем имя
+
+    // Характеристики при создании
+    p -> max_hp = 100;
+    p -> hp = 100;
+    p -> max_stamina = 50;
+    p -> stamina = 50;
+    p -> gold = 50;
+    p -> maps_drawn = 0; // Задел под 6-й вариант
+
+    // Стартовый инвентарь
+    int start_inv[10] = {2, 3, 4, 4, 0, 0, 0, 0, 0, 0};
+    for (int i = 0; i < SIZE; i++) p->inventory[i] = start_inv[i];
+
+    printf("Персонаж %s успешно создан!\n", p->name);
+    return p;
+}
+
+// [case: 0] УДАЛЕНИЕ ПЕРСОНАЖА (Освобождение памяти)
+void free_player(Player *p) 
+{
+    if (p != NULL) 
+    {
+        printf("\nПамять структуры по адресу %p освобождена\n", (void*)p);
+        free(p);
+    }
+}
+
+// [case: 2] ВЫВОД КАРТОЧКИ ПЕРСОНАЖА
+void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
+{
+    // Заголовки
+    printf("\n--- Карточка: %s ---\n", p -> name);
+    printf("\n> HP: %d/%d | Выносливость: %d/%d | Золото: %d\n", p -> hp, p -> max_hp, p -> stamina, 
+        p -> max_stamina, p -> gold);
+
+    if (p -> maps_drawn > 0) printf("Зарисовано карт: %d\n", p -> maps_drawn);
+
+    printf("\n> Инвентарь:\n");
+    showInventory(p -> inventory, item_names);
+}
+
 // ======== РАБОТА С ИНВЕНТАРЕМ ======== //
 
 // [case: 3] ПОСМОТРЕТЬ ИНВЕНТАРЬ

@@ -18,7 +18,15 @@
 typedef struct player
 {
     char name[32];
-    int inventory[10];
+    int inventory[10];   // Массив слотов инвентаря (ID предметов)
+    int hp;              // Текущее здоровье
+    int max_hp;          // Максимальное здоровье
+    int stamina;         // Текущая выносливость
+    int max_stamina;     // Максимальная выносливость
+    int gold;            // Золото
+    
+    // --- Поля для 6-го варианта (Картография) ---
+    int maps_drawn;      // Сколько карт зарисовано (на продажу)
 } Player;
 
 // ==== Прототипы функций ==== //
@@ -27,5 +35,8 @@ void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void deleteItem(int inventory[]);
 void clearTrash(int inventory[]);
 void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
+Player* create_player(void);
+void free_player(Player *p);
+void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 
 #endif

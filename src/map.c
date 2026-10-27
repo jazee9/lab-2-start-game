@@ -80,6 +80,9 @@ int generateForest(ForestMap *m)
     m -> height = randInRange(MIN_MAP, MAX_MAP); // Для высоты
     m -> width = randInRange(MIN_MAP, MAX_MAP); // Для ширины
 
+    // Генерация биома
+    m -> biome = randInRange(0, 3);
+
     // Выделяем память с числами которые выпали для height и width
     m -> cells = allocGrid(m -> height, m -> width); // Закидываем в allocGrid
     if (m -> cells == NULL) return 0; // Если что-то не сработало
@@ -164,8 +167,16 @@ int generateForest(ForestMap *m)
 // ДЛЯ ВЫВОДА НА ЭКРАН: карта, инструкция по управлению, прочие инструкции (status_message)
 void printForest(const ForestMap *m) 
 {
+    const char *biome_name = "Неизвестно";
+
+    // Какой биом выпал
+    if (m -> biome == BIOME_WOODS) biome_name = "Редколесье";
+    else if (m -> biome == BIOME_SWAMP) biome_name = "Топь";
+    else if (m -> biome == BIOME_RUINS) biome_name = "Каменные руины";
+    else if (m -> biome == BIOME_CRYSTAL) biome_name = "Кристальная пещера";
+
     // Заголовок
-    printf("\n--- Локация Лес-кольцо %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", 
+    printf("\n--- Локация %s %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", biome_name,
         m -> width, m -> height, m -> maps_passed, m -> edges_crossed);
 
     // Перебираем
@@ -290,7 +301,7 @@ int tryMoveForest(ForestMap *m, const char *dir)
 }
 
 // [case: 10] ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
-void forestRingAdventure(void) 
+void forestRingAdventure(Player *p) 
 {
     ForestMap m; // Запускает структуру
     memset(&m, 0, sizeof(m)); // Дает 0 всем в структуре
@@ -310,6 +321,10 @@ void forestRingAdventure(void)
 
     while (running) 
     {
+        // Интерфейс игрока
+        printf("\nHP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d\n", 
+            p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold, m.maps_passed);
+
         // Читаем ход (карта уже на экране, сообщений нет)
         printf("\nХод: ");
         char ch[10];
@@ -335,14 +350,46 @@ void forestRingAdventure(void)
             continue; // Не перерисовываем карту, просто покажем сообщение (или выйдем)
         }
 
+        // Запоминаем где стоял игрок до шага
+        int old_x = m.hero_x;
+        int old_y = m.hero_y;
+
         // Движение
         int res = tryMoveForest(&m, ch);
 
-        if (res) 
+        // Если шаг был успешным (координаты изменились)
+        if (m.hero_x != old_x || m.hero_y != old_y) 
+        {
+            // Трата стамины в зависимости от биома
+            int stamina_cost = 1; 
+            if (m.biome == BIOME_SWAMP) stamina_cost = 2; // В Топи шаг 2 стамины
+            
+            p -> stamina -= stamina_cost;
+            if (p -> stamina < 0) p -> stamina = 0;
+        }
+
+        // Переход на новый этаж (портал [P])
+        if (res == 1) 
         {
             m.maps_passed++; 
+            p -> stamina -= 5; // Переход этажа стоит 5 стамины
+            if (p -> stamina < 0) p -> stamina = 0;
+            
+            // Награда за этаж (в Кристальной пещере х3)
+            int gold_reward = 10 * m.maps_passed; 
+            if (m.biome == BIOME_CRYSTAL) gold_reward *= 3;
+            p -> gold += gold_reward;
+            
             freeForest(&m); 
             if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
+        }
+
+        // Проверка на обморок (Экстренная эвакуация)
+        if (p -> stamina <= 0) 
+        {
+            printf("\nВы падаете без сил! Спасатели забирают половину золота.\n");
+            p -> gold /= 2;
+            break; 
         }
 
         // Очищаем экран и рисуем карту + новое сообщение (если есть)
