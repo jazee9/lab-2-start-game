@@ -38,7 +38,7 @@ void free_player(Player *p)
 {
     if (p != NULL) 
     {
-        printf("\nПамять структуры по адресу %p освобождена\n", (void*)p);
+        printf("\nПамять структуры по адресу %p освобождена\n\n", (void*)p);
         free(p);
     }
 }

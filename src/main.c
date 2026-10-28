@@ -1,26 +1,20 @@
 // ======== ИМПОРТ ========⁡ //
-
 // Библиотеки
 #include <time.h> // Для рандомных чисел
 #include <stdio.h> // Для ввода и вывода 
-
 // Подключение файлов
 #include "utils.h"
 #include "player.h"
 #include "map.h"
 
 // ⁡⁢⁣========== КОНСТАНТЫ ============⁡ //
-
 #define HOURS_IN_DAY 24 // Кол-во часов в сутках
-
-// Для имени фермера
 #define MAX_FARMER_NAME 32 // Имя фермера: 31 символ + '\0'
-
 
 // ========= ПРОТОТИПЫ ======== //
 void printMenu(const char *farmer);
 void showTime(int day, int hour);
-void workTime(int *day, int *hour);
+void skipTime(int *day, int *hour);
 void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void deleteItem(int inventory[]);
@@ -33,11 +27,8 @@ void timeMenu(Player *p, int *day, int *hour);
 
 int main(void) 
 {
-    // Что бы rand() при каждом запуске программы не выдавал одну и ту же последовательность 
+    // Что бы rand() не выдавал одну и ту же последовательность 
     srand((unsigned)time(NULL)); 
-    // time(NULL) - Выдает текущее время #include <time.h>
-    // unsigned - Приводит в целое
-    // srand() - Задаёт начальное значение для генератора псевдослучайных чисел
 
     // Инициализация основных переменных⁡ 
     int current_day = 1;
@@ -56,15 +47,8 @@ int main(void)
 
         switch (choice) 
         {
-
-        // ⁡⁢⁣Если введена неверная цифра для выбора пункта меню
-        default: printf("Нет такого пункта меню.\n"); break;
-
-        // ⁡⁢⁣========= CASES =========⁡ //
-
         // ВЫХОД 
-        case 0: printf("Выход...\n");  
-                free_player(player); break;  
+        case 0: printf("Выход...\n"); free_player(player); break;  
 
         // СОЗДАТЬ / ПЕРЕСОЗДАТЬ        
         case 1: if (player != NULL) 
@@ -79,11 +63,12 @@ int main(void)
                 player = create_player(); break;
  
         // КАРТОЧКА ПЕРСОНАЖА 
-        case 2: if (player == 0) {printf("Персонаж не создан!\n"); break;}
+        case 2: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
                 print_player_card(player, item_names); break;
-        
+
         // УПРАВЛЕНИЕ ВРЕМЕНЕМ
-        case 3: timeMenu(player, &current_day, &current_hour); break; // Вызов подменню
+        case 3: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                timeMenu(player, &current_day, &current_hour); break; // Вызов подменню
         
         // ПОСМОТРЕТЬ ИНВЕНТАРЬ
         case 4: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
@@ -111,18 +96,22 @@ int main(void)
                 write_diary(player -> name, current_day, current_hour, player -> inventory, item_names); break;
 
         // АНАЛИЗ ЛОГА
-        case 10: analyzeLog(); break; 
+        case 10: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                analyzeLog(); break; 
 
         // ПРИКЛЮЧЕНИЕ
         case 11: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
                 forestRingAdventure(player); break;
+
+        default: printf("Нет такого пункта меню.\n"); break;
         } 
-    } while (choice != 0); // <--- А ЭТА ЗАКРЫВАЕТ DO
+    } while (choice != 0);
     return 0;
 }
 
-// ⁡⁢⁣====== ВЫВОД МЕНЮ ========⁡ //
+// ================ ФУНКЦИИ ================ //
 
+// ⁡⁢Для вывода меню
 void printMenu(const char *farmer) 
 {
     printf("\n====== МЕНЮ | Фермер: %s ======\n", farmer);
@@ -141,17 +130,14 @@ void printMenu(const char *farmer)
     printf("\nВыбор: ");
 }
 
-// ================ ФУНКЦИИ ================ //
-
-// Для [case: 3]
+// Для [case: 3] "Подменю"
 void timeMenu(Player *p, int *day, int *hour) 
 {
     int choice;
     do {
-        // Менюшка
         printf("\n--- УПРАВЛЕНИЕ ВРЕМЕНЕМ ---\n");
         printf("1. - Посмотреть на часы\n");
-        printf("2. - Пропустить время (Поработать)\n");
+        printf("2. - Пропустить время (Ждать)\n");
         printf("3. - Отдых (Лечь спать)\n");
         printf("0. - Назад в главное меню\n");
         printf("Выбор: ");
@@ -160,36 +146,21 @@ void timeMenu(Player *p, int *day, int *hour)
 
         switch (choice) 
         {
-            case 0: 
-                break; // Выход в главное меню
-                
-            case 1: 
-                showTime(*day, *hour); 
-                break;
-                
-            case 2: 
-                workTime(day, hour); 
-                break;
-                
+            case 0: break; // Выход в главное меню   
+            case 1: showTime(*day, *hour); break;
+            case 2: skipTime(day, hour); break;
             case 3: 
-                if (p == NULL) 
-                {
-                    printf("Персонаж не создан! Сначала создайте его в главном меню.\n");
-                } 
-                else 
                 {
                     printf("Вы ложитесь спать...\n");
+                    
                     *day += 1;
                     *hour = 8;
                     p -> hp = p -> max_hp;
                     p -> stamina = p -> max_stamina;
                     printf("Наступило утро! День %d, время: %d:00\n", *day, *hour);
                     printf("Здоровье и выносливость полностью восстановлены!\n");
-                } 
-                break;
-                
-            default: 
-                printf("Нет такого пункта.\n");
+                } break;
+            default: printf("Нет такого пункта.\n");
         }
     } while (choice != 0);
 }
@@ -197,13 +168,29 @@ void timeMenu(Player *p, int *day, int *hour)
 // ПОСМОТРЕТЬ ВРЕМЯ
 void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
 
-// ПРОМАТАТЬ ВРЕМЯ (ПОРАБОТАТЬ)
-void workTime(int *day, int *hour)
+// ПРОМАТАТЬ ВРЕМЯ (Ждать)
+void skipTime(int *day, int *hour)
 { 
-    printf("Сколько часов поработать?: "); int h = readInt(); // Спрашиваем у пользователя
-    if (h < 0) {printf("Кол-во часов не могут быть отрицательными!\n"); return;} // Неверный ввод
+    printf("Сколько часов поработать?: "); 
+    int h = readInt(); 
 
-    *hour += h; // Прибавляем часы, введенные пользователем
+    if (h < 1) {printf("Кол-во часов должно быть не меньше 1!\n"); return;}
+
+    int maxSkip; // Для подсчета сколько часов осталось до ближайших 2:00
+
+    if (*hour < 2) maxSkip = 2 - *hour; // Если щас 0:00 или 1:00
+    // if (*hour == 2) {printf("Лучше лечь спать");}
+    else maxSkip = (24 - *hour) + 2; // Если щас 2:00 или позже
+
+    // Проверка
+    if (h > maxSkip) 
+    {
+        printf("Нельзя перемотать дальше 2:00 ночи!\n");
+        printf("Максимум можно промотать на %d ч.\n", maxSkip);
+        return;
+    }
+
+    *hour += h; 
     *day += *hour / HOURS_IN_DAY; // Считаем день
     *hour %= HOURS_IN_DAY; // Сколько часов по итогу
 
