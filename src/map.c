@@ -2,6 +2,7 @@
 
 // ==== Подключение файлов ==== //
 #include "map.h"
+#include "utils.h"
 
 // Для вывода сообщений
 char status_message[256] = "";
@@ -97,7 +98,16 @@ int generateForest(ForestMap *m)
     }
 
     // [T] [R] Заполняем случайно деревьями и камнями. (T) и (R)
-    int pct = randInRange(OBSTACLE_MIN_PERCENT, OBSTACLE_MAX_PERCENT); // Cлучайный % (от 15 до 30)
+    int pct;
+    // На разных биомах - разный % препятствий
+    switch (m -> biome) 
+    {
+        case BIOME_WOODS: pct = randInRange(10, 15); break;
+        case BIOME_CRYSTAL: pct = randInRange(15, 20); break;
+        case BIOME_RUINS: pct = randInRange(25, 35); break;
+        case BIOME_SWAMP: pct = randInRange(20, 25); break;
+        default: pct = randInRange(OBSTACLE_MIN_PERCENT, OBSTACLE_MAX_PERCENT);
+    }
 
     for (int y = 0; y < m -> height; y++) // Перебор строк до последней
     {
@@ -161,6 +171,7 @@ int generateForest(ForestMap *m)
     m -> edges_crossed = 0;
     m -> portal_active = 0;
     m -> on_camp = 0;
+    m -> is_mapped = 0;
     return 1;
 }
 
@@ -188,7 +199,7 @@ void printForest(const ForestMap *m)
     }
 
     // Инструкция по управлению
-    printf("\nW/A/S/D - идти. Q - домой (только на ^)\n");
+    printf("\nW/A/S/D - идти. Q - домой (только на ^). M - зарисовать карту (5 стамины)\n");
 
     // Вывод подсказок под картой
     if (status_message[0] != '\0') {
@@ -300,9 +311,14 @@ int tryMoveForest(ForestMap *m, const char *dir)
     return 0;
 }
 
-// [case: 10] ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
-void forestRingAdventure(Player *p) 
+// [case: 12] ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
+void forestRingAdventure(Player *p, GameTime *t) 
 {
+
+    // Проверки условий похода в приключение
+    if (p -> stamina <= 0) {printf("Ваша выносливость на нуле... Лучше лечь спать!\n"); return;}
+    if (t -> hour >= 2 && t -> hour < 8) {printf("Слишком поздно, лучше лечь спать!\n"); return;}
+
     ForestMap m; // Запускает структуру
     memset(&m, 0, sizeof(m)); // Дает 0 всем в структуре
     m.maps_passed = 1; 
@@ -322,8 +338,8 @@ void forestRingAdventure(Player *p)
     while (running) 
     {
         // Интерфейс игрока
-        printf("\nHP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d\n", 
-            p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold, m.maps_passed);
+        printf("\nHP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d | Время %d:00\n", 
+            p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold, m.maps_passed, t -> hour);
 
         // Читаем ход (карта уже на экране, сообщений нет)
         printf("\nХод: ");
@@ -331,6 +347,27 @@ void forestRingAdventure(Player *p)
         if (fgets(ch, sizeof(ch), stdin) == NULL) break;
 
         status_message[0] = '\0'; // Очищаем сообщение перед ходом
+
+        // [M] Зарисовать этаж
+        if (ch[0] == 'M' || ch[0] == 'm' || strncmp(ch, "ь", 2) == 0 || strncmp(ch, "Ь", 2) == 0)
+        {
+            // Условия для закраса этажа
+            if (m.is_mapped == 1) strcpy(status_message, "Вы уже зарисовал этот этаж!");
+            // if (p -> gold < 5) strcpy(status_message, "Зарисовать этаж можно за 5 золота, у вас меньше!");
+            else if (p -> stamina < 5) strcpy(status_message, "Зарисовать этаж можно за 5 выносливости, у вас меньше!");
+            else 
+            {
+                p -> stamina -= 5;
+                p -> maps_drawn++;
+                m.is_mapped += 1;
+
+                strcpy(status_message, "Вы зарисовали этот этаж!");
+            }
+
+            system("clear");
+            printForest(&m);
+            continue;
+        }
 
         // [Q] (выход)
         if (ch[0] == 'Q' || ch[0] == 'q' || (strncmp(ch, "Й", 2) == 0) || (strncmp(ch, "й", 2) == 0))  
@@ -364,7 +401,7 @@ void forestRingAdventure(Player *p)
             int stamina_cost = 1; 
             if (m.biome == BIOME_SWAMP) stamina_cost = 2; // В Топи шаг 2 стамины
             
-            p -> stamina -= stamina_cost;
+            p -> stamina -= stamina_cost; // 1 шаг
             if (p -> stamina < 0) p -> stamina = 0;
         }
 
@@ -373,10 +410,12 @@ void forestRingAdventure(Player *p)
         {
             m.maps_passed++; 
             p -> stamina -= 5; // Переход этажа стоит 5 стамины
+            t -> hour += 1; // Переход на новый этаж - +1 к hour
             if (p -> stamina < 0) p -> stamina = 0;
             
             // Награда за этаж (в Кристальной пещере х3)
-            int gold_reward = 10 * m.maps_passed; 
+            // Награда = Базовый_Множитель * Номер_Этажа
+            int gold_reward = BASE_MULTIPLIER * m.maps_passed;
             if (m.biome == BIOME_CRYSTAL) gold_reward *= 3;
             p -> gold += gold_reward;
             
@@ -385,9 +424,9 @@ void forestRingAdventure(Player *p)
         }
 
         // Проверка на обморок (Экстренная эвакуация)
-        if (p -> stamina <= 0) 
+        if (p -> stamina <= 0 || (t -> hour >= 2 && t -> hour < 8)) 
         {
-            printf("\nВы падаете без сил! Спасатели забирают половину золота.\n");
+            printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
             p -> gold /= 2;
             break; 
         }
@@ -396,5 +435,5 @@ void forestRingAdventure(Player *p)
         system("clear");
         printForest(&m);
     } 
-    freeForest(&m); 
+    freeForest(&m); // Хоть как выйдя из цикла чистится память карты
 }

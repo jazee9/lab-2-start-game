@@ -14,14 +14,15 @@
 // ========= ПРОТОТИПЫ ======== //
 void printMenu(const char *farmer);
 void showTime(int day, int hour);
-void skipTime(int *day, int *hour);
 void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void putItem(int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void deleteItem(int inventory[]);
 void clearTrash(int inventory[]);
 void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
-void timeMenu(Player *p, int *day, int *hour);
+void timeMenu(Player *p, GameTime *t);
+void skipTime(GameTime *t);
+void sell_maps(Player *p);
 
 // ====================== MAIN ====================⁡ //
 
@@ -30,9 +31,9 @@ int main(void)
     // Что бы rand() не выдавал одну и ту же последовательность 
     srand((unsigned)time(NULL)); 
 
-    // Инициализация основных переменных⁡ 
-    int current_day = 1;
-    int current_hour = 8;
+    // Инициализация времени 
+    GameTime time = {1, 8}; // При запуске день 1, 8:00 
+
     char item_names[MAX_ITEMS][MAX_NAME_LEN]; // Создаем таблицу для названий предметов 10/32 - 1 ('\0')
     int choice; 
 
@@ -68,7 +69,7 @@ int main(void)
 
         // УПРАВЛЕНИЕ ВРЕМЕНЕМ
         case 3: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
-                timeMenu(player, &current_day, &current_hour); break; // Вызов подменню
+                timeMenu(player, &time); break; // Вызов подменню
         
         // ПОСМОТРЕТЬ ИНВЕНТАРЬ
         case 4: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
@@ -93,15 +94,19 @@ int main(void)
                 
         // ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА
         case 9: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
-                write_diary(player -> name, current_day, current_hour, player -> inventory, item_names); break;
+                write_diary(player -> name, time.day, time.hour, player -> inventory, item_names); break;
 
         // АНАЛИЗ ЛОГА
         case 10: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
                 analyzeLog(); break; 
 
-        // ПРИКЛЮЧЕНИЕ
+        // ПРОДАТЬ КАРТЫ
         case 11: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
-                forestRingAdventure(player); break;
+                sell_maps(player); break;
+     
+        // ПРИКЛЮЧЕНИЕ
+        case 12: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+                forestRingAdventure(player, &time); break;
 
         default: printf("Нет такого пункта меню.\n"); break;
         } 
@@ -125,13 +130,14 @@ void printMenu(const char *farmer)
     printf("8.  - Найти предмет в инвентаре\n");
     printf("9.  - Записать состояние в дневник фермера\n");
     printf("10. - Анализ лога\n");
-    printf("11. - Отправится в приключение (Лес-кольцо)\n");
+    printf("11. - Продать зарисованные карты\n");
+    printf("12. - Отправится в приключение (Лес-кольцо)\n");
     printf("0.  - Выход\n");
     printf("\nВыбор: ");
 }
 
 // Для [case: 3] "Подменю"
-void timeMenu(Player *p, int *day, int *hour) 
+void timeMenu(Player *p, GameTime *t)
 {
     int choice;
     do {
@@ -147,17 +153,17 @@ void timeMenu(Player *p, int *day, int *hour)
         switch (choice) 
         {
             case 0: break; // Выход в главное меню   
-            case 1: showTime(*day, *hour); break;
-            case 2: skipTime(day, hour); break;
+            case 1: showTime(t -> day, t -> hour); break;
+            case 2: skipTime(t); break;
             case 3: 
                 {
                     printf("Вы ложитесь спать...\n");
                     
-                    *day += 1;
-                    *hour = 8;
+                    t -> day += 1;
+                    t -> hour = 8;
                     p -> hp = p -> max_hp;
                     p -> stamina = p -> max_stamina;
-                    printf("Наступило утро! День %d, время: %d:00\n", *day, *hour);
+                    printf("Наступило утро! День %d, время: %d:00\n", t -> day, t -> hour);
                     printf("Здоровье и выносливость полностью восстановлены!\n");
                 } break;
             default: printf("Нет такого пункта.\n");
@@ -169,18 +175,18 @@ void timeMenu(Player *p, int *day, int *hour)
 void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
 
 // ПРОМАТАТЬ ВРЕМЯ (Ждать)
-void skipTime(int *day, int *hour)
+void skipTime(GameTime *t)
 { 
-    printf("Сколько часов поработать?: "); 
+    printf("Сколько часов промотать?: "); 
     int h = readInt(); 
 
     if (h < 1) {printf("Кол-во часов должно быть не меньше 1!\n"); return;}
 
     int maxSkip; // Для подсчета сколько часов осталось до ближайших 2:00
 
-    if (*hour < 2) maxSkip = 2 - *hour; // Если щас 0:00 или 1:00
+    if (t -> hour < 2) maxSkip = 2 - t -> hour; // Если щас 0:00 или 1:00
     // if (*hour == 2) {printf("Лучше лечь спать");}
-    else maxSkip = (24 - *hour) + 2; // Если щас 2:00 или позже
+    else maxSkip = (24 - t -> hour) + 2; // Если щас 2:00 или позже
 
     // Проверка
     if (h > maxSkip) 
@@ -190,11 +196,11 @@ void skipTime(int *day, int *hour)
         return;
     }
 
-    *hour += h; 
-    *day += *hour / HOURS_IN_DAY; // Считаем день
-    *hour %= HOURS_IN_DAY; // Сколько часов по итогу
+    t -> hour += h; 
+    t -> day += t -> hour / HOURS_IN_DAY; // Считаем день
+    t -> hour %= HOURS_IN_DAY; // Сколько часов по итогу
 
-    showTime(*day, *hour); // Выводим время после перемотки
+    showTime(t -> day, t -> hour); // Выводим время после перемотки
 }
 
 // ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА (diary.txt)
@@ -219,4 +225,44 @@ void write_diary(const char *farmer, int day, int hour, const int inventory[], c
     fprintf(f, "\n"); // Пустая строка между записями
     fclose(f);
     printf("Запись добавлена\n");
+}
+
+// Для [case: 11] Продать карты
+void sell_maps(Player *p) 
+{
+    if (p -> maps_drawn == 0) {printf("У вас нет зарисованных карт!\n"); return;}
+
+    printf("\nКурс за 1 карту - %d золота\n", PRICE_ONE_MAP);
+
+    if (p -> maps_drawn == 1) 
+    {
+        p -> gold += PRICE_ONE_MAP;
+        p -> maps_drawn -= 1;
+        printf("\nУ вас была 1 карта, она продана за %d золота\n", PRICE_ONE_MAP);
+        printf("Сейчас у вас %d золота!\n", p -> gold);
+    }
+    else if (p -> maps_drawn > 1) 
+    {
+        printf("Количество ваших зарисованных карт: %d\n", p -> maps_drawn);
+        printf("Сколько карт вы хотите продать? ");
+        
+        int quantity_sale_map = readInt();
+
+        // Некорректного ввод (меньше 1 или больше, чем есть)
+        if (quantity_sale_map < 1 || quantity_sale_map > p -> maps_drawn) 
+        {
+            printf("Ошибка! Вы не можете продать столько карт!.\n");
+            printf("Количество ваших зарисованных карт: %d\n", p -> maps_drawn);
+            return; // Выходим, чтобы не начислять золото
+        }
+
+        // Если проверка пройдена - продаем
+        int sum_gold_sale_map = quantity_sale_map * PRICE_ONE_MAP;
+
+        p -> gold += sum_gold_sale_map;
+        p -> maps_drawn -= quantity_sale_map;
+        
+        printf("Вы продали на %d золота\n", sum_gold_sale_map);
+        printf("Осталось карт: %d. Теперь у вас %d золота.\n", p -> maps_drawn, p -> gold);
+    }
 }

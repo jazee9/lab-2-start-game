@@ -11,6 +11,14 @@
 #define MAX_ITEMS    10  // Сколько всего видов предметов (ID)
 #define MAX_NAME_LEN 32  // Название предмета: 31 символ + '\0'
 
+// === Структуры === //
+// Для текущего дня и время
+typedef struct 
+{
+    int day;
+    int hour;
+} GameTime;
+
 // ==== Прототипы функций ==== //
 int readInt(void);
 void readLine(char *buf, size_t size);

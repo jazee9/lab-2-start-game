@@ -21,6 +21,10 @@ extern char status_message[256];
 #define OBSTACLE_MAX_PERCENT 30
 // Сколько должен пройти игрок, что бы появился портал
 #define RING_TRIGGER_COUNT 3
+// Базовый множитель
+#define BASE_MULTIPLIER 10
+// Цена за одну карту в золоте
+#define PRICE_ONE_MAP 20
 
 // ==== Структуры ==== //
 
@@ -45,6 +49,7 @@ typedef struct
     int on_camp; // Персонаж стоит на костре. 1 - стоит, 0 - стоит на обычной клетке (не костер)
     int maps_passed; // Счетчик дальности от дома (сколько пройденно карт)
     Biome biome;
+    int is_mapped; // 0 - не зарисован этаж, 1 - зарисован
 } ForestMap;
 
 // ==== Прототипы функций ==== //
@@ -55,6 +60,6 @@ int generateForest(ForestMap *m);
 void printForest(const ForestMap *m);
 void maybeSpawnPortal(ForestMap *m);
 int tryMoveForest(ForestMap *m, const char *dir);
-void forestRingAdventure(Player *p);
+void forestRingAdventure(Player *p, GameTime *t);
 
 #endif
