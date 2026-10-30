@@ -5,6 +5,9 @@
 #include "player.h"
 #include "map.h"
 
+// ==== Константы ==== //
+#define HOURS_IN_DAY 24 // Кол-во часов в сутках
+
 // ================ ФУНКЦИИ ================ //
 
 // ======== ДИНАМИЧЕСКИЙ ИГРОК ======== //
@@ -66,6 +69,38 @@ void showInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LE
     for (int num = 0; num < SIZE; num++) 
         {if (inventory[num] >= 0 && inventory[num] < MAX_ITEMS) // Перебор слотов
         printf("Слот %d: [%d] - %s\n", num, inventory[num], item_names[inventory[num]]);}     
+}
+
+// ПОСМОТРЕТЬ ВРЕМЯ
+void showTime(int day,int hour) {printf("Текущее время: День %d, время: %d:00\n", day, hour);}
+
+// ПРОМАТАТЬ ВРЕМЯ (Ждать)
+void skipTime(GameTime *t)
+{ 
+    printf("Сколько часов промотать?: "); 
+    int h = readInt(); 
+
+    if (h < 1) {printf("Кол-во часов должно быть не меньше 1!\n"); return;}
+
+    int maxSkip; // Для подсчета сколько часов осталось до ближайших 2:00
+
+    if (t -> hour < 2) maxSkip = 2 - t -> hour; // Если щас 0:00 или 1:00
+    // if (*hour == 2) {printf("Лучше лечь спать");}
+    else maxSkip = (24 - t -> hour) + 2; // Если щас 2:00 или позже
+
+    // Проверка
+    if (h > maxSkip) 
+    {
+        printf("Нельзя перемотать дальше 2:00 ночи!\n");
+        printf("Максимум можно промотать на %d ч.\n", maxSkip);
+        return;
+    }
+
+    t -> hour += h; 
+    t -> day += t -> hour / HOURS_IN_DAY; // Считаем день
+    t -> hour %= HOURS_IN_DAY; // Сколько часов по итогу
+
+    showTime(t -> day, t -> hour); // Выводим время после перемотки
 }
 
 // [case: 4] ПОЛОЖИТЬ ПРЕДМЕТ В ИНВЕНТАРЬ
@@ -157,6 +192,30 @@ void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN])
         printed++;
     }
     printf("\n");
+}
+
+// ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА (diary.txt)
+void write_diary(const char *farmer, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
+{
+    FILE *f = fopen("diary.txt", "a");
+    // Если не откроется
+    if (f == NULL) {printf("Ошибка! Не удалось открыть файл diary.txt для записи.\n"); return;}
+
+    fprintf(f, "==== Фермер: %s ====\n", farmer);
+    fprintf(f, "Время: День %d, %d:00\n", day, hour);
+    fprintf(f, "Инвентарь:\n");
+
+    // Выводим инвентарь
+    for (int num = 0; num < SIZE; num++) // Перебор слотов
+    {
+        int id = inventory[num];
+        if (id >= 0 && id < MAX_ITEMS) 
+            fprintf(f, "  Слот %d: %s\n", num, item_names[id]);
+    }
+
+    fprintf(f, "\n"); // Пустая строка между записями
+    fclose(f);
+    printf("Запись добавлена\n");
 }
 
 // Для [case: 11] Продать карты
