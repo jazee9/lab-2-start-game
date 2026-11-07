@@ -19,6 +19,7 @@ void write_diary(const char *farmer, int day, int hour, const int inventory[], c
 void timeMenu(Player *p, GameTime *t);
 void skipTime(GameTime *t);
 void sell_maps(Player *p);
+int playerExist(Player *p);
 
 // ====================== MAIN ====================⁡ //
 int main(void) 
@@ -54,38 +55,38 @@ int main(void)
                     }
                 player = create_player(); break;
         // КАРТОЧКА ПЕРСОНАЖА 
-        case 2: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 2: if (!playerExist(player)) break;
                 print_player_card(player, item_names); break;
         // УПРАВЛЕНИЕ ВРЕМЕНЕМ
-        case 3: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 3: if (!playerExist(player)) break;
                 timeMenu(player, &time); break; // Вызов подменню
         // ПОСМОТРЕТЬ ИНВЕНТАРЬ
-        case 4: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 4: if (!playerExist(player)) break;
                 printf("\n> Инвентарь:\n");
                 showInventory(player -> inventory, item_names); break;
         // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
-        case 5: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 5: if (!playerExist(player)) break;
                 putItem(player -> inventory, item_names); break; 
         // ВЫБРОСИТЬ ПРЕДМЕТ
-        case 6: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 6: if (!playerExist(player)) break;
                 deleteItem(player -> inventory); break; 
         // ОЧИСТИТЬ МУСОР ИНВЕНТАРЯ
-        case 7: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 7: if (!playerExist(player)) break;
                 clearTrash(player -> inventory); break;
         // НАЙТИ ПРЕДМЕТ В ИНВЕНТАРЕ
-        case 8: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 8: if (!playerExist(player)) break;
                 findItem(player -> inventory, item_names); break;      
         // ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА
-        case 9: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 9: if (!playerExist(player)) break;
                 write_diary(player -> name, time.day, time.hour, player -> inventory, item_names); break;
         // АНАЛИЗ ЛОГА
-        case 10: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 10: if (!playerExist(player)) break;
                 analyzeLog(); break; 
         // ПРОДАТЬ КАРТЫ
-        case 11: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 11: if (!playerExist(player)) break;
                 sell_maps(player); break;
         // ПРИКЛЮЧЕНИЕ
-        case 12: if (player == NULL) {printf("Персонаж не создан!\n"); break;}
+        case 12: if (!playerExist(player)) break;
                 forestRingAdventure(player, &time); break;
 
         default: printf("Нет такого пункта меню.\n"); break;

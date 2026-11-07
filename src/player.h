@@ -38,5 +38,6 @@ void findItem(const int inventory[], char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 Player* create_player(void);
 void free_player(Player *p);
 void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]);
+int playerExist(Player *p);
 
 #endif
