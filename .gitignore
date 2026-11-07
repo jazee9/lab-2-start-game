@@ -1,3 +1,6 @@
+main
+game
+
 # Скомпилированные файлы
 *.exe
 *.o
@@ -18,7 +21,6 @@
 # Генерируемые программой файлы
 output.txt
 diary.txt
-Farmer07.11
 
 # Бинарники
 gameFinall
