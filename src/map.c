@@ -374,6 +374,7 @@ void forestRingAdventure(Player *p, GameTime *t)
         {
             if (m.on_camp == 1) // На костре?
             {
+                system("clear");
                 printf("Вы отдохнули у костра и вернулись домой.\n");
                 running = 0; 
             }
@@ -411,6 +412,7 @@ void forestRingAdventure(Player *p, GameTime *t)
             // Если сил на переход не хватает
             if (p->stamina < 5) 
             { 
+                system("clear");
                 printf("\nУ вас не хватило сил на переход! Вы падаете без сил...\n");
                 p -> stamina = 0;
                 break; // Выходим из цикла похода (обморок)
@@ -434,6 +436,7 @@ void forestRingAdventure(Player *p, GameTime *t)
         // Проверка на обморок (Экстренная эвакуация)
         if (p -> stamina <= 0 || (t -> hour >= 2 && t -> hour < 8)) 
         {
+            system("clear");
             printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
             p -> gold /= 2;
             break; 

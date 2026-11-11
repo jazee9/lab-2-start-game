@@ -2,6 +2,7 @@
 // Библиотеки
 #include <time.h> // Для рандомных чисел
 #include <stdio.h> // Для ввода и вывода 
+#include <stdlib.h> // Для ввода и вывода 
 // Подключение файлов
 #include "utils.h"
 #include "player.h"
@@ -44,9 +45,10 @@ int main(void)
         // ВЫХОД 
         case 0: printf("Выход...\n"); free_player(player); break;  
         // СОЗДАТЬ / ПЕРЕСОЗДАТЬ        
-        case 1: if (player != NULL) 
+        case 1: system("clear");
+                if (player != NULL) 
                     {
-                        printf("Персонаж уже существует! Удалить его? (1 - Да, 0 - Нет): ");
+                        printf("Персонаж уже существует! Пересоздать его? (1 - Да, 0 - Нет): ");
                         if (readInt() == 1) 
                         {
                             free_player(player);
@@ -55,41 +57,41 @@ int main(void)
                     }
                 player = create_player(); break;
         // КАРТОЧКА ПЕРСОНАЖА 
-        case 2: if (!playerExist(player)) break;
+        case 2: system("clear"); if (!playerExist(player)) break;
                 print_player_card(player, item_names); break;
         // УПРАВЛЕНИЕ ВРЕМЕНЕМ
-        case 3: if (!playerExist(player)) break;
+        case 3: system("clear"); if (!playerExist(player)) break;
                 timeMenu(player, &time); break; // Вызов подменню
         // ПОСМОТРЕТЬ ИНВЕНТАРЬ
-        case 4: if (!playerExist(player)) break;
+        case 4: system("clear"); if (!playerExist(player)) break;
                 printf("\n> Инвентарь:\n");
                 showInventory(player -> inventory, item_names); break;
         // ПОЛОЖИТЬ ПРЕДМЕТ В СЛОТ
-        case 5: if (!playerExist(player)) break;
+        case 5: system("clear"); if (!playerExist(player)) break;
                 putItem(player -> inventory, item_names); break; 
         // ВЫБРОСИТЬ ПРЕДМЕТ
-        case 6: if (!playerExist(player)) break;
+        case 6: system("clear"); if (!playerExist(player)) break;
                 deleteItem(player -> inventory); break; 
         // ОЧИСТИТЬ МУСОР ИНВЕНТАРЯ
-        case 7: if (!playerExist(player)) break;
+        case 7: system("clear"); if (!playerExist(player)) break;
                 clearTrash(player -> inventory); break;
         // НАЙТИ ПРЕДМЕТ В ИНВЕНТАРЕ
-        case 8: if (!playerExist(player)) break;
+        case 8: system("clear"); if (!playerExist(player)) break;
                 findItem(player -> inventory, item_names); break;      
         // ЗАПИСАТЬ СОСТОЯНИЕ В ДНЕВНИК ФЕРМЕРА
-        case 9: if (!playerExist(player)) break;
+        case 9: system("clear"); if (!playerExist(player)) break;
                 write_diary(player -> name, time.day, time.hour, player -> inventory, item_names); break;
         // АНАЛИЗ ЛОГА
-        case 10: if (!playerExist(player)) break;
+        case 10: system("clear"); if (!playerExist(player)) break;
                 analyzeLog(); break; 
         // ПРОДАТЬ КАРТЫ
-        case 11: if (!playerExist(player)) break;
+        case 11: system("clear"); if (!playerExist(player)) break;
                 sell_maps(player); break;
         // ПРИКЛЮЧЕНИЕ
-        case 12: if (!playerExist(player)) break;
+        case 12: system("clear"); if (!playerExist(player)) break;
                 forestRingAdventure(player, &time); break;
 
-        default: printf("Нет такого пункта меню.\n"); break;
+        default: system("clear"); printf("Нет такого пункта меню.\n"); break;
         } 
     } while (choice != 0);
     return 0;
@@ -120,6 +122,7 @@ void printMenu(const char *farmer)
 void timeMenu(Player *p, GameTime *t)
 {
     int choice;
+    system("clear");
     do {
         printf("\n--- УПРАВЛЕНИЕ ВРЕМЕНЕМ ---\n");
         printf("1. - Посмотреть на часы\n");
@@ -132,18 +135,19 @@ void timeMenu(Player *p, GameTime *t)
 
         switch (choice) 
         {
-            case 0: break; // Выход в главное меню   
-            case 1: showTime(t -> day, t -> hour); break;
-            case 2: skipTime(t); break;
+            case 0: system("clear"); break; // Выход в главное меню   
+            case 1: system("clear"); showTime(t -> day, t -> hour); break;
+            case 2: system("clear"); skipTime(t); break;
             case 3: 
                 {
+                    system("clear");
                     printf("Вы ложитесь спать...\n");
                     
                     t -> day += 1;
                     t -> hour = 8;
                     p -> hp = p -> max_hp;
                     p -> stamina = p -> max_stamina;
-                    printf("Наступило утро! День %d, время: %d:00\n", t -> day, t -> hour);
+                    printf("\nНаступило утро! День %d, время: %d:00\n", t -> day, t -> hour);
                     printf("Здоровье и выносливость полностью восстановлены!\n");
                 } break;
             default: printf("Нет такого пункта.\n");

@@ -28,7 +28,7 @@ Player* create_player(void)
     Player *p = (Player*)malloc(sizeof(Player)); // Память
     if (!p) return NULL; // Проверка, что память выделилась
 
-    printf("Как зовут фермера? ");
+    printf("Как будут звать фермера? ");
     readLine(p -> name, MAX_NAME_LEN); // Записываем имя
 
     // Характеристики при создании
@@ -43,6 +43,7 @@ Player* create_player(void)
     int start_inv[10] = {2, 3, 4, 4, 0, 0, 0, 0, 0, 0};
     for (int i = 0; i < SIZE; i++) p->inventory[i] = start_inv[i];
 
+    system("clear");
     printf("Персонаж %s успешно создан!\n", p->name);
     return p;
 }
@@ -239,8 +240,10 @@ void sell_maps(Player *p)
     {
         p -> gold += PRICE_ONE_MAP;
         p -> maps_drawn -= 1;
+        system("clear");
         printf("\nУ вас была 1 карта, она продана за %d золота\n", PRICE_ONE_MAP);
         printf("Сейчас у вас %d золота!\n", p -> gold);
+        return;
     }
     else if (p -> maps_drawn > 1) 
     {
@@ -263,6 +266,7 @@ void sell_maps(Player *p)
         p -> gold += sum_gold_sale_map;
         p -> maps_drawn -= quantity_sale_map;
         
+        system("clear");
         printf("Вы продали на %d золота\n", sum_gold_sale_map);
         printf("Осталось карт: %d. Теперь у вас %d золота.\n", p -> maps_drawn, p -> gold);
     }
