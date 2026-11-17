@@ -29,22 +29,23 @@ Player* create_player(void)
     if (!p) return NULL; // Проверка, что память выделилась
 
     printf("Как будут звать фермера? ");
-    readLine(p -> name, MAX_NAME_LEN); // Записываем имя
+    readLine(p -> name, MAX_NAME_LEN);
 
-    // Характеристики при создании
+    // Характеристики игрока при создании
     p -> max_hp = 100;
     p -> hp = 100;
     p -> max_stamina = 50;
     p -> stamina = 50;
     p -> gold = 50;
-    p -> maps_drawn = 0; // Задел под 6-й вариант
+    p -> maps_drawn = 0;
+    p -> attack = 5;
+    p -> defense = 2;
 
-    // Стартовый инвентарь
     int start_inv[10] = {2, 3, 4, 4, 0, 0, 0, 0, 0, 0};
     for (int i = 0; i < SIZE; i++) p->inventory[i] = start_inv[i];
 
     system("clear");
-    printf("Персонаж %s успешно создан!\n", p->name);
+    printf("Персонаж %s успешно создан!\n", p -> name);
     return p;
 }
 
