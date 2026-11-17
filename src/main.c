@@ -90,7 +90,7 @@ int main(void)
                 sell_maps(player); break;
         // ПРИКЛЮЧЕНИЕ
         case 12: system("clear"); if (!playerExist(player)) break;
-                forestRingAdventure(player, &time); break;
+                forestRingAdventure(player, &time, item_names); break;
 
         default: system("clear"); printf("Нет такого пункта меню.\n"); break;
         } 

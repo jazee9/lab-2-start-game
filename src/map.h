@@ -60,6 +60,6 @@ int generateForest(ForestMap *m);
 void printForest(const ForestMap *m);
 void maybeSpawnPortal(ForestMap *m);
 int tryMoveForest(ForestMap *m, const char *dir);
-void forestRingAdventure(Player *p, GameTime *t);
+void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 
 #endif

@@ -313,7 +313,7 @@ int tryMoveForest(ForestMap *m, const char *dir)
 }
 
 // [case: 12] ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
-void forestRingAdventure(Player *p, GameTime *t) 
+void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
 {
 
     // Проверки условий похода в приключение
@@ -393,22 +393,44 @@ void forestRingAdventure(Player *p, GameTime *t)
             continue; // Не перерисовываем карту, просто покажем сообщение (или выйдем)
         }
 
-        // Запоминаем где стоял игрок до шага
-        int old_x = m.hero_x;
-        int old_y = m.hero_y;
+        int dx = 0; int dy = 0;
+        if (ch[0] == 'W' || ch[0] == 'w' || strncmp(ch, "Ц", 2) == 0) dy = -1;
+        else if (ch[0] == 'S' || ch[0] == 's' || strncmp(ch, "Ы", 2) == 0) dy = 1;
+        else if (ch[0] == 'A' || ch[0] == 'a' || strncmp(ch, "Ф", 2) == 0) dx = -1;
+        else if (ch[0] == 'D' || ch[0] == 'd' || strncmp(ch, "В", 2) == 0) dx = 1;
 
-        // Движение
-        int res = tryMoveForest(&m, ch);
+        // Координаты куда хочет шагнуть
+        int target_x = m.hero_x + dx;
+        int target_y = m.hero_y + dy;
 
-        // Если шаг был успешным (координаты изменились)
-        if (m.hero_x != old_x || m.hero_y != old_y) 
+        // Заворот координат для поиска сущности
+        if (target_x < 0) target_x = m.width - 1;
+        if (target_x >= m.width) target_x = 0;
+        if (target_y < 0) target_y = m.height - 1;
+        if (target_y >= m.height) target_y = 0;
+
+        // Проверям есть ли ам сущность?
+        int interaction = 0;
+        if (dx != 0 || dy != 0)
+            interaction = interact_with_entity(p, entities, entity_count, target_x, target_y, &m, item_names);
+
+        // Если взаимодействия не было - делаем обычный шаг
+        int res = 0;
+        if (interaction == 0) 
         {
-            // Трата стамины в зависимости от биома
-            int stamina_cost = 1; 
-            if (m.biome == BIOME_SWAMP) stamina_cost = 2; // В Топи шаг 2 стамины
-            
-            p -> stamina -= stamina_cost; // 1 шаг
-            if (p -> stamina < 0) p -> stamina = 0;
+            int old_x = m.hero_x;
+            int old_y = m.hero_y;
+            res = tryMoveForest(&m, ch);
+
+            // Трата стамины + в зависимости от биома
+            if (m.hero_x != old_x || m.hero_y != old_y) 
+            {
+                int stamina_cost = 1; 
+                if (m.biome == BIOME_SWAMP) stamina_cost = 2; // В Топи шаг 2 стамины
+                
+                p -> stamina -= stamina_cost;
+                if (p -> stamina < 0) p -> stamina = 0;
+            }
         }
 
         // Переход на новый этаж (портал [P])
@@ -434,8 +456,10 @@ void forestRingAdventure(Player *p, GameTime *t)
             if (m.biome == BIOME_CRYSTAL) gold_reward *= 3;
             p -> gold += gold_reward;
             
+            free_entities(entities, entity_count); // Чистим старые сущности
             freeForest(&m); 
             if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
+            entity_count = generate_entities(&m, &entities); // Новые сущности для нового этажа
         }
 
         // Проверка на обморок (Экстренная эвакуация)

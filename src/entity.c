@@ -75,7 +75,7 @@ int generate_entities(ForestMap *m, Entity **entities)
                 m->cells[y][x] = 'M';
                 Entity e;
                 e.type = ENT_MONSTER;
-                e.x = x, e.x = y;
+                e.x = x, e.y = y;
                 e.symbol = 'M';
                 e.attack = (int)(5 * m->maps_passed * DIFFICULTY_MULTIPLIER);
                 e.max_hp = (int)(15 * m->maps_passed * DIFFICULTY_MULTIPLIER);
@@ -91,7 +91,7 @@ int generate_entities(ForestMap *m, Entity **entities)
                 m->cells[y][x] = '+';
                 Entity e;
                 e.type = ENT_HEAL;
-                e.x = x, e.x = y;
+                e.x = x, e.y = y;
                 e.symbol = '+';
                 e.attack = 0;
                 e.max_hp = 1, e.hp = 1;
@@ -126,7 +126,7 @@ static int add_to_inventory(Player *p, int item_id)
     {
         if (p->inventory[i] == 0)
         {
-            p->inventory == item_id;
+            p->inventory[i] = item_id;
             return 1;
         }
     }
@@ -181,16 +181,15 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
             {
                 entities[i].is_alive = 0;
                 m->cells[target_y][target_x] = '.';
-                p->hp = p->max_hp; // Хилим до макс.
-                int result_stamina = p->stamina += HOW_MUCH_HEAL_PLUS_STAMINA;
-                // Если + привысит max_stamina
-                if (result_stamina > p->max_stamina)
+                p->hp += 20;
+                if (p->hp > p->max_hp)
+                    p->hp = p->max_hp;
+                p->stamina += 20;
+                if (p->stamina > p->max_stamina)
                     p->stamina = p->max_stamina;
-                else
-                    p->stamina += HOW_MUCH_HEAL_PLUS_STAMINA;
 
                 strcpy(status_message, "Вы съели ягоды и восстановили HP и выносливость!");
-                return 2; // 2 - что бы он шагнул туда
+                return 0;
             }
         }
     }
