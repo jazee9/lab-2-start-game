@@ -3,6 +3,7 @@
 // ==== Подключение файлов ==== //
 #include "map.h"
 #include "utils.h"
+#include "entity.h"
 
 // Для вывода сообщений
 char status_message[256] = "";
@@ -331,6 +332,10 @@ void forestRingAdventure(Player *p, GameTime *t)
         return;
     }
 
+    // Генерируем сущности
+    Entity *entities = NULL;
+    int entity_count = generate_entities(&m, &entities);
+
     int running = 1;
     system("clear");
     printForest(&m); // Рисуем первую карту
@@ -447,4 +452,5 @@ void forestRingAdventure(Player *p, GameTime *t)
         printForest(&m);
     } 
     freeForest(&m); // Хоть как выйдя из цикла чистится память карты
+    free_entities(entities, entity_count);
 }

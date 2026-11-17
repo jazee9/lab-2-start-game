@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "player.h"
 #include "map.h"
+#include "entity.h"
 
 // ========= ПРОТОТИПЫ ======== //
 void printMenu(const char *farmer);
