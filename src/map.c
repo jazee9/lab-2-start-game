@@ -456,18 +456,35 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             if (m.biome == BIOME_CRYSTAL) gold_reward *= 3;
             p -> gold += gold_reward;
             
-            free_entities(entities, entity_count); // Чистим старые сущности
+            // Очищаем монстров, если они остались
+            if (entities != NULL) {
+                free_entities(entities, entity_count);
+                entities = NULL;
+                entity_count = 0;
+            }
+            
             freeForest(&m); 
             if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
             entity_count = generate_entities(&m, &entities); // Новые сущности для нового этажа
         }
 
         // Проверка на обморок (Экстренная эвакуация)
-        if (p -> stamina <= 0 || (t -> hour >= 2 && t -> hour < 8)) 
+        if (p->stamina <= 0 || (t->hour >= 2 && t->hour < 8)) 
         {
             system("clear");
             printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
             p -> gold /= 2;
+            p -> hp = 1;
+            break; 
+        }
+
+        // Проверка на хп
+        if (p->hp <= 0) 
+        {
+            system("clear");
+            printf("\nВы погибли в бою! Спасатели забрали половину золота и доставили вас домой.\n");
+            p -> gold /= 2;
+            p -> hp = 1;
             break; 
         }
 

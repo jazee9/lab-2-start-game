@@ -24,6 +24,7 @@ typedef struct Entity
     int x, y;         // Координаты
     int hp;           // Текущее хп
     int max_hp;       // Максимальное хп
+    int defense;      // Защита
     int attack;       // Урон
     int drop_item_id; // ID предмета, который выпадет
     int is_alive;     // 1 - живой/целый, 0 - уничтожен

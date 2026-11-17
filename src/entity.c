@@ -3,8 +3,9 @@
 
 // Константы
 #define MAX_ENTITIES 100              // Максимальное кол-во сущностей на этаже
-#define WOOD_STRENGTH 10              // Прочность дерева (на первом этаже)
+#define WOOD_STRENGTH 5              // Прочность дерева (на первом этаже)
 #define STONE_STRENGTH 20             // Прочность камня (на первом этаже)
+#define REWARD_FOR_MONSTER_KILL 20    // Базовая награда золотом за убийство монстра
 #define MAX_MONSTERS_ON_FLOOR 3       // Макс. кол-во монстров на этаже
 #define MAX_HEALS_ON_FLOOR 2          // Макс. кол-во аптечек на этаже
 #define DIFFICULTY_MULTIPLIER 1.5     // Множитель сложности
@@ -79,6 +80,7 @@ int generate_entities(ForestMap *m, Entity **entities)
                 e.symbol = 'M';
                 e.attack = (int)(5 * m->maps_passed * DIFFICULTY_MULTIPLIER);
                 e.max_hp = (int)(15 * m->maps_passed * DIFFICULTY_MULTIPLIER);
+                e.defense = 2 * m->maps_passed;
                 e.hp = e.max_hp;
                 e.drop_item_id = 0;
                 e.is_alive = 1;
@@ -173,6 +175,42 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                     sprintf(status_message, "Вы ударили %s на %d урона (Осталось хп: %d/%d)", item_names[entities[i].drop_item_id], damage, entities[i].hp, entities[i].max_hp);
                 }
 
+                return 1;
+            }
+
+            // Драка с монстром
+            if (entities[i].type == ENT_MONSTER)
+            {
+                // Бъет игрок
+                int player_damage = p->attack - (entities[i].defense / 2); // Формула
+                if (player_damage < 1)
+                    player_damage = 1;
+                entities[i].hp -= player_damage;
+                p->stamina -= 2;
+
+                char msg[256];
+
+                // Если он сдох
+                if (entities[i].hp <= 0)
+                {
+                    entities[i].is_alive = 0;
+                    m->cells[target_y][target_x] = '.';
+                    int reward = REWARD_FOR_MONSTER_KILL * m->maps_passed;
+                    p->gold += reward;
+
+                    sprintf(status_message, "Вы победили монстра! Нанесли %d урона и получили %d золота.", player_damage, reward);
+                }
+                // Если он жив, то бьет в ответ
+                else
+                {
+                    int monster_damage = entities[i].attack - (p->defense / 2);
+                    if (monster_damage < 1)
+                        monster_damage = 1;
+                    p->hp -= monster_damage;
+
+                    sprintf(status_message, "Вы ударили монстра на %d. Монстр ударил вас на %d (Ваше HP: %d, HP монстра: %d)",
+                            player_damage, monster_damage, p->hp, entities[i].hp);
+                }
                 return 1;
             }
 
