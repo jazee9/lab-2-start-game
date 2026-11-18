@@ -18,15 +18,17 @@
 typedef struct player
 {
     char name[32];
-    int inventory[10];   // Массив слотов инвентаря (ID предметов)
-    int hp;              // Текущее здоровье
-    int max_hp;          // Максимальное здоровье
-    int stamina;         // Текущая выносливость
-    int max_stamina;     // Максимальная выносливость
-    int gold;            // Золото
-    int maps_drawn;      // Сколько карт зарисовано (на продажу)
-    int attack;          // Базовая сила удара/добычи
-    int defense;         // Защита
+    int inventory[10];      // Массив слотов инвентаря (ID предметов)
+    int hp;                 // Текущее здоровье
+    int max_hp;             // Максимальное здоровье
+    int stamina;            // Текущая выносливость
+    int max_stamina;        // Максимальная выносливость
+    int gold;               // Золото
+    int maps_drawn;         // Сколько карт зарисовано (на продажу)
+    int attack;             // Базовая сила удара/добычи
+    int defense;            // Защита
+    int resources_gathered; // Сколько ресурсов добыто за поход
+    int monsters_killed;    // Сколько монстров убито
 } Player;
 
 // ==== Прототипы функций ==== //
@@ -39,5 +41,6 @@ Player* create_player(void);
 void free_player(Player *p);
 void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 int playerExist(Player *p);
+void write_adventure_report(Player *p, int day, int floor_reached, int is_dead);
 
 #endif

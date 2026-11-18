@@ -40,6 +40,8 @@ Player* create_player(void)
     p -> maps_drawn = 0;
     p -> attack = 5;
     p -> defense = 2;
+    p -> monsters_killed = 0;
+    p -> resources_gathered = 0;
 
     int start_inv[10] = {2, 3, 4, 4, 0, 0, 0, 0, 0, 0};
     for (int i = 0; i < SIZE; i++) p->inventory[i] = start_inv[i];
@@ -271,4 +273,24 @@ void sell_maps(Player *p)
         printf("Вы продали на %d золота\n", sum_gold_sale_map);
         printf("Осталось карт: %d. Теперь у вас %d золота.\n", p -> maps_drawn, p -> gold);
     }
+}
+
+// Функция для записи краткого отчёта о вылазке
+void write_adventure_report(Player *p, int day, int floor_reached, int is_dead) 
+{
+    FILE *f = fopen("diary.txt", "a");
+    if (f == NULL) return;
+    
+    fprintf(f, "\n=== Отчет о походе ===");
+    fprintf(f, "\nФермер: %s | День %d", p->name, day);
+    fprintf(f, "\nДостигнут этаж: %d", floor_reached);
+    fprintf(f, "\nДобыто ресурсов: %d", p->resources_gathered);
+    fprintf(f, "\nУбито монстров: %d", p->monsters_killed);
+    fprintf(f, "\nЗолото: %d", p->gold);
+
+    if (is_dead) fprintf(f, "\n\nСтатус: Экстренная эвакуация (обморок)");
+    else fprintf(f, "\n\nСтатус: Успешное возвращение домой\n");
+    fprintf(f, "======================\n\n");
+
+    fclose(f);
 }

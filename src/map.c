@@ -202,9 +202,11 @@ void printForest(const ForestMap *m)
     // Инструкция по управлению
     printf("\nW/A/S/D - идти. Q - домой (только на ^). M - зарисовать карту (5 стамины)\n");
 
-    // Вывод подсказок под картой
+    // Вывод последнего события
     if (status_message[0] != '\0') {
-        printf("\n>>> %s <<<\n", status_message);
+        printf("\n[Событие]: %s\n", status_message);
+    } else {
+        printf("\n[Событие]: Ничего не произошло.\n");
     }
     printf("\n");
 }
@@ -236,136 +238,138 @@ void maybeSpawnPortal(ForestMap *m)
 }
 
 // ДЛЯ ПЕРЕДВИЖЕНИЯ ИГРОКА ПО КАРТЕ
-int tryMoveForest(ForestMap *m, const char *dir) 
+// 0 — шаг не состоялся или обычный шаг;
+// 1 — игрок вошёл в портал (нужен переход на новый этаж).
+int tryMoveForest(ForestMap *m, const char *dir)
 {
-    // Для подсчетов
-    int dx = 0;
-    int dy = 0;
+    int dx = 0, dy = 0;
 
-    // Биндим кнопки
-    if (dir[0] == 'W' || dir[0] == 'w' || strncmp(dir, "Ц", 2) == 0 || 
-        strncmp(dir, "ц", 2) == 0) dy = -1; // Вверх
-    else if (dir[0] == 'S' || dir[0] == 's' || strncmp(dir, "Ы", 2) == 0 || 
-        strncmp(dir, "ы", 2) == 0) dy = 1; // Вниз
-    else if (dir[0] == 'A' || dir[0] == 'a' || strncmp(dir, "Ф", 2) == 0 || 
-        strncmp(dir, "ф", 2) == 0) dx = -1; // Влево
-    else if (dir[0] == 'D' || dir[0] == 'd' || strncmp(dir, "В", 2) == 0 || 
-        strncmp(dir, "в", 2) == 0) dx = 1; // Вправо
-    else return 0; // Если нажал не то, ничего не происходит
+    if (dir[0] == 'W' || dir[0] == 'w' || strncmp(dir, "Ц", 2) == 0 || strncmp(dir, "ц", 2) == 0) dy = -1;
+    else if (dir[0] == 'S' || dir[0] == 's' || strncmp(dir, "Ы", 2) == 0 || strncmp(dir, "ы", 2) == 0) dy = 1;
+    else if (dir[0] == 'A' || dir[0] == 'a' || strncmp(dir, "Ф", 2) == 0 || strncmp(dir, "ф", 2) == 0) dx = -1;
+    else if (dir[0] == 'D' || dir[0] == 'd' || strncmp(dir, "В", 2) == 0 || strncmp(dir, "в", 2) == 0) dx = 1;
+    else return 0;
 
-    // Новая координата
-    int nx = m -> hero_x + dx;
-    int ny = m -> hero_y + dy;
+    int nx = m->hero_x + dx;
+    int ny = m->hero_y + dy;
 
-    // 0 - не вышел за край, 1 - вышел за край
+    // Заворот карты
     int crossed = 0;
+    if (nx < 0)          { nx = m->width  - 1; crossed = 1; }
+    if (nx >= m->width)  { nx = 0;             crossed = 1; }
+    if (ny < 0)          { ny = m->height - 1; crossed = 1; }
+    if (ny >= m->height) { ny = 0;             crossed = 1; }
 
-    // выходы за края
-    if (nx < 0) {nx = m -> width - 1; crossed = 1;} // Если вышел за ЛЕВЫЙ, тепаем у ПРАВОГО 
-    if (nx >= m -> width) {nx = 0; crossed = 1;} // Если вышел за ПРАВЫЙ, тепаем у ЛЕВОГО 
-    if (ny < 0) {ny = m -> height - 1; crossed = 1;} // Если вышел за ВЕРХНИЙ, тепаем у НИЖНЕГО 
-    if (ny >= m -> height) {ny = 0; crossed = 1;} // Если вышел за НИЖНИЙ, тепаем у ВЕРХНЕГО
-    
-    // Узнаем, что в той клетке, в которую идем
-    char c = m -> cells[ny][nx];
+    char c = m->cells[ny][nx];
 
-    // Если припятствие [T] [R]
-    if (c == 'T' || c == 'R') 
+    // Этим занимается interact_with_entity
+    if (c == 'T' || c == 'R' || c == 'M' || c == '+') return 0;
+
+    if (crossed) m->edges_crossed++;
+
+    // Стираем героя со старой клетки
+    m->cells[m->hero_y][m->hero_x] = m->on_camp ? '^' : '.';
+    m->on_camp = 0;
+
+    // Если портал
+    if (c == 'P')
     {
-        strcpy(status_message, "Туда нельзя, препятствие!");
-        return 0;
-    } 
-
-    // Переходы через край
-    if (crossed) 
-    {
-        m -> edges_crossed++;
-        sprintf(status_message, "Вы пересекли край леса (переходов: %d)", m->edges_crossed);
-    }
-
-    // Если перешел, то стираем героя со старой клетки и возвращаем туда [.] или [^]
-    m -> cells[m -> hero_y][m -> hero_x] = m -> on_camp ? '^' : '.';
-    m -> on_camp = 0; // Если был на костре и ушел с него
-
-    // Если портал [P]
-    if (c == 'P') 
-    {
-        m -> cells[ny][nx] = '@'; // Ставим героя
-        m -> hero_x = nx; m -> hero_y = ny; // Обнуляем координаты, тк будет новая карта
+        m->cells[ny][nx] = '@';
+        m->hero_x = nx;
+        m->hero_y = ny;
         return 1;
     }
 
-    // После проверки припятствий и прочего
-    m -> hero_x = nx; m -> hero_y = ny;
+    // Новые координаты
+    m->hero_x = nx;
+    m->hero_y = ny;
 
-    if (c == '^')  // Если там костер
+    // Если костер
+    if (c == '^')
     {
-        m -> on_camp = 1;
-        m -> cells[ny][nx] = '@';
-
+        m->on_camp = 1;
+        m->cells[ny][nx] = '@';
         strcpy(status_message, "Вы у костра, можно передохнуть (Q - выйти домой)");
     }
-
-    else {m -> cells[ny][nx] = '@';} // Если там ничего
+    else
+    {
+        m->cells[ny][nx] = '@';
+    }
 
     maybeSpawnPortal(m);
     return 0;
 }
 
 // [case: 12] ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
-void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
+void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_NAME_LEN])
 {
+    // Проверки условий похода
+    if (p->stamina <= 0)
+    {
+        printf("Ваша выносливость на нуле... Лучше лечь спать!\n");
+        return;
+    }
 
-    // Проверки условий похода в приключение
-    if (p -> stamina <= 0) {printf("Ваша выносливость на нуле... Лучше лечь спать!\n"); return;}
-    if (t -> hour >= 2 && t -> hour < 8) {printf("Слишком поздно, лучше лечь спать!\n"); return;}
+    if (t->hour >= 2 && t->hour < 8)
+    {
+        printf("Слишком поздно, лучше лечь спать!\n");
+        return;
+    }
 
-    ForestMap m; // Запускает структуру
-    memset(&m, 0, sizeof(m)); // Дает 0 всем в структуре
-    m.maps_passed = 1; 
-    status_message[0] = '\0'; // Отчистка буфера
-
-    if (!generateForest(&m)) 
+    // Генерируем первую карту
+    ForestMap m;
+    memset(&m, 0, sizeof(m));
+    m.maps_passed = 1;
+    status_message[0] = '\0';
+    // Проверка генерации
+    if (!generateForest(&m))
     {
         printf("Ошибка генерации леса!\n");
-        freeForest(&m); 
+        freeForest(&m);
         return;
     }
 
     // Генерируем сущности
     Entity *entities = NULL;
     int entity_count = generate_entities(&m, &entities);
+    // Проверка генерации
+    if (entity_count < 0)
+    {
+        printf("Ошибка генерации сущностей!\n");
+        freeForest(&m);
+        return;
+    }
 
     int running = 1;
     system("clear");
-    printForest(&m); // Рисуем первую карту
+    printForest(&m);
 
-    while (running) 
+    while (running)
     {
-        // Интерфейс игрока
-        printf("\nHP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d | Время %d:00\n", 
-            p->hp, p->max_hp, p->stamina, p->max_stamina, p->gold, m.maps_passed, t -> hour);
+        printf("\nHP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d | Время %d:00\n",
+               p->hp, p->max_hp, p->stamina, p->max_stamina,
+               p->gold, m.maps_passed, t->hour);
 
-        // Читаем ход (карта уже на экране, сообщений нет)
         printf("\nХод: ");
         char ch[10];
-        if (fgets(ch, sizeof(ch), stdin) == NULL) break;
+        if (fgets(ch, sizeof(ch), stdin) == NULL)
+            break;
 
-        status_message[0] = '\0'; // Очищаем сообщение перед ходом
+        status_message[0] = '\0';
 
-        // [M] Зарисовать этаж
-        if (ch[0] == 'M' || ch[0] == 'm' || strncmp(ch, "ь", 2) == 0 || strncmp(ch, "Ь", 2) == 0)
+        // [M] - Зарисовать этаж
+        if (ch[0] == 'M' || ch[0] == 'm' ||
+            strncmp(ch, "ь", 2) == 0 || strncmp(ch, "Ь", 2) == 0)
         {
-            // Условия для закраса этажа
-            if (m.is_mapped == 1) strcpy(status_message, "Вы уже зарисовал этот этаж!");
-            // if (p -> gold < 5) strcpy(status_message, "Зарисовать этаж можно за 5 золота, у вас меньше!");
-            else if (p -> stamina < 5) strcpy(status_message, "Зарисовать этаж можно за 5 выносливости, у вас меньше!");
-            else 
+            if (m.is_mapped == 1)
+                strcpy(status_message, "Вы уже зарисовали этот этаж!");
+            else if (p->stamina < 5)
+                strcpy(status_message, "Зарисовать этаж можно за 5 выносливости, у вас меньше!");
+            else
             {
-                p -> stamina -= 5;
-                p -> maps_drawn++;
-                m.is_mapped += 1;
-
+                p->stamina -= 5;
+                p->maps_drawn++;
+                m.is_mapped = 1;
                 strcpy(status_message, "Вы зарисовали этот этаж!");
             }
 
@@ -374,124 +378,155 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             continue;
         }
 
-        // [Q] (выход)
-        if (ch[0] == 'Q' || ch[0] == 'q' || (strncmp(ch, "Й", 2) == 0) || (strncmp(ch, "й", 2) == 0))  
+        // [Q] - Выход домой, только на костре
+        if (ch[0] == 'Q' || ch[0] == 'q' ||
+            strncmp(ch, "Й", 2) == 0 || strncmp(ch, "й", 2) == 0)
         {
-            if (m.on_camp == 1) // На костре?
+            if (m.on_camp == 1)
             {
                 system("clear");
                 printf("Вы отдохнули у костра и вернулись домой.\n");
-                running = 0; 
+                write_adventure_report(p, t->day, m.maps_passed, 0);
+                running = 0;
             }
-            else 
+            else
             {
                 strcpy(status_message, "Выйти домой можно только стоя на костре (^).");
-
                 system("clear");
                 printForest(&m);
-            } 
-            continue; // Не перерисовываем карту, просто покажем сообщение (или выйдем)
+            }
+            continue;
         }
 
-        int dx = 0; int dy = 0;
-        if (ch[0] == 'W' || ch[0] == 'w' || strncmp(ch, "Ц", 2) == 0) dy = -1;
-        else if (ch[0] == 'S' || ch[0] == 's' || strncmp(ch, "Ы", 2) == 0) dy = 1;
-        else if (ch[0] == 'A' || ch[0] == 'a' || strncmp(ch, "Ф", 2) == 0) dx = -1;
-        else if (ch[0] == 'D' || ch[0] == 'd' || strncmp(ch, "В", 2) == 0) dx = 1;
+        // Направление
+        int dx = 0, dy = 0;
+        if (ch[0] == 'W' || ch[0] == 'w' || strncmp(ch, "Ц", 2) == 0 || strncmp(ch, "ц", 2) == 0) dy = -1;
+        else if (ch[0] == 'S' || ch[0] == 's' || strncmp(ch, "Ы", 2) == 0 || strncmp(ch, "ы", 2) == 0) dy = 1;
+        else if (ch[0] == 'A' || ch[0] == 'a' || strncmp(ch, "Ф", 2) == 0 || strncmp(ch, "ф", 2) == 0) dx = -1;
+        else if (ch[0] == 'D' || ch[0] == 'd' || strncmp(ch, "В", 2) == 0 || strncmp(ch, "в", 2) == 0) dx = 1;
+        else
+        {
+            system("clear");
+            printForest(&m);
+            continue;
+        }
 
         // Координаты куда хочет шагнуть
         int target_x = m.hero_x + dx;
         int target_y = m.hero_y + dy;
 
         // Заворот координат для поиска сущности
-        if (target_x < 0) target_x = m.width - 1;
-        if (target_x >= m.width) target_x = 0;
-        if (target_y < 0) target_y = m.height - 1;
-        if (target_y >= m.height) target_y = 0;
+        if (target_x < 0)          target_x = m.width  - 1;
+        if (target_x >= m.width)   target_x = 0;
+        if (target_y < 0)          target_y = m.height - 1;
+        if (target_y >= m.height)  target_y = 0;
 
-        // Проверям есть ли ам сущность?
-        int interaction = 0;
-        if (dx != 0 || dy != 0)
-            interaction = interact_with_entity(p, entities, entity_count, target_x, target_y, &m, item_names);
+        // Проверяем на сущность (если сущность - взаимодействуем)
+        int interaction = interact_with_entity(p, entities, entity_count,
+            target_x, target_y, &m, item_names);
 
-        // Если взаимодействия не было - делаем обычный шаг
         int res = 0;
-        if (interaction == 0) 
+
+        // Если взаимодействия не было
+        if (interaction != 0)
+        {
+            // Если аптечка
+            if (interaction == 2)
+            {
+                m.cells[m.hero_y][m.hero_x] = m.on_camp ? '^' : '.';
+                m.on_camp = 0;
+                m.hero_x = target_x;
+                m.hero_y = target_y;
+                m.cells[m.hero_y][m.hero_x] = '@';
+            }
+        }
+
+        // Обычный шаг
+        else
         {
             int old_x = m.hero_x;
             int old_y = m.hero_y;
             res = tryMoveForest(&m, ch);
 
-            // Трата стамины + в зависимости от биома
-            if (m.hero_x != old_x || m.hero_y != old_y) 
+            if (m.hero_x != old_x || m.hero_y != old_y)
             {
-                int stamina_cost = 1; 
-                if (m.biome == BIOME_SWAMP) stamina_cost = 2; // В Топи шаг 2 стамины
-                
-                p -> stamina -= stamina_cost;
-                if (p -> stamina < 0) p -> stamina = 0;
+                int stamina_cost = (m.biome == BIOME_SWAMP) ? 2 : 1;
+                p->stamina -= stamina_cost;
+                if (p->stamina < 0) p->stamina = 0;
             }
         }
 
-        // Переход на новый этаж (портал [P])
-        if (res == 1) 
+        // [P] - Переход на новый этаж
+        if (res == 1)
         {
-            // Если сил на переход не хватает
-            if (p->stamina < 5) 
-            { 
+            if (p->stamina < 5)
+            {
                 system("clear");
                 printf("\nУ вас не хватило сил на переход! Вы падаете без сил...\n");
-                p -> stamina = 0;
-                break; // Выходим из цикла похода (обморок)
+                p->stamina = 0;
+                break;
             }
 
-            m.maps_passed++; 
-            p -> stamina -= 5; // Переход этажа стоит 5 стамины
-            t -> hour += 1; // Переход на новый этаж - +1 к hour
-            if (p -> stamina < 0) p -> stamina = 0;
-            
-            // Награда за этаж (в Кристальной пещере х3)
-            // Награда = Базовый_Множитель * Номер_Этажа
+            m.maps_passed++;
+            p->stamina -= 5;
+            t->hour += 1;
+            if (p->stamina < 0) p->stamina = 0;
+
             int gold_reward = BASE_MULTIPLIER * m.maps_passed;
             if (m.biome == BIOME_CRYSTAL) gold_reward *= 3;
-            p -> gold += gold_reward;
-            
-            // Очищаем монстров, если они остались
-            if (entities != NULL) {
+            p->gold += gold_reward;
+
+            if (entities != NULL)
+            {
                 free_entities(entities, entity_count);
                 entities = NULL;
                 entity_count = 0;
             }
-            
-            freeForest(&m); 
-            if (!generateForest(&m)) {printf("Ошибка генерации.\n"); break;}
-            entity_count = generate_entities(&m, &entities); // Новые сущности для нового этажа
+
+            freeForest(&m);
+            if (!generateForest(&m))
+            {
+                printf("Ошибка генерации леса.\n");
+                write_adventure_report(p, t->day, m.maps_passed, 1);
+                return;
+            }
+
+            entity_count = generate_entities(&m, &entities);
+            if (entity_count < 0)
+            {
+                printf("Ошибка генерации сущностей на новом этаже!\n");
+                freeForest(&m);
+                write_adventure_report(p, t->day, m.maps_passed, 1);
+                return;
+            }
         }
 
-        // Проверка на обморок (Экстренная эвакуация)
-        if (p->stamina <= 0 || (t->hour >= 2 && t->hour < 8)) 
+        // Обморок (Экстренная эвакуация)
+        if (p->stamina <= 0 || (t->hour >= 2 && t->hour < 8))
         {
             system("clear");
             printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
-            p -> gold /= 2;
-            p -> hp = 1;
-            break; 
+            p->gold /= 2;
+            p->hp = 1;
+            write_adventure_report(p, t->day, m.maps_passed, 1);
+            break;
         }
 
-        // Проверка на хп
-        if (p->hp <= 0) 
+        // Сдох с монстром
+        if (p->hp <= 0)
         {
             system("clear");
             printf("\nВы погибли в бою! Спасатели забрали половину золота и доставили вас домой.\n");
-            p -> gold /= 2;
-            p -> hp = 1;
-            break; 
+            p->gold /= 2;
+            p->hp = 1;
+            write_adventure_report(p, t->day, m.maps_passed, 1);
+            break;
         }
 
-        // Очищаем экран и рисуем карту + новое сообщение (если есть)
         system("clear");
         printForest(&m);
-    } 
-    freeForest(&m); // Хоть как выйдя из цикла чистится память карты
+    }
+
+    freeForest(&m);
     free_entities(entities, entity_count);
 }

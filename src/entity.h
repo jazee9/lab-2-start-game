@@ -2,8 +2,6 @@
 #define ENITY_H
 
 // Импорты
-#include <stdlib.h>
-#include <stdio.h>
 #include "map.h"
 #include "player.h"
 
@@ -31,9 +29,8 @@ typedef struct Entity
 } Entity;
 
 // Прототипы функций
-int generate_entities(ForestMap *m, Entity **entities); // Генерация сущностей
-void free_entities(Entity *entities, int count);        // Очистка памяти
-// Фунция, которая будет срабатывать, когда игрок шагает на + или M
+int generate_entities(ForestMap *m, Entity **entities);
+void free_entities(Entity *entities, int count);
 int interact_with_entity(Player *p, Entity *entities, int entity_count, int target_x, int target_y, ForestMap *m, char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 
 #endif
