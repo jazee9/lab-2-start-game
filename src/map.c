@@ -1,108 +1,105 @@
-// Файл для всего, что связано с приключением и картой
-
 // ==== Подключение файлов ==== //
 #include "map.h"
 #include "utils.h"
 #include "entity.h"
 
-// Для вывода сообщений
 char status_message[256] = "";
 
 // ================ ФУНКЦИИ ================ //
 
-// ДЛЯ ВЫДЕЛЕНИЯ ДВУМЕРНОГО МАССИВА
-char **allocGrid(int h, int w) // Принимает высоту и ширину карты
+// ========== РАБОТА С ПАМЯТЬЮ ========== //
+
+// Для выделения двумерного массива
+char **allocGrid(int h, int w)
 {
-    char **g = (char**)malloc((size_t)h * sizeof(char*)); // выделяем массив из h-указателей
+    char **g = (char**)malloc((size_t)h * sizeof(char*));
+    if (g == NULL) return NULL;
 
-    if (g == NULL) return NULL; // Проверяет выделилась ли память, если нет - сразу выходим NULL
-
-    for (int i = 0; i < h; i++) // Перебор строк
+    for (int i = 0; i < h; i++)
     {
-        g[i] = (char*)malloc((size_t)w * sizeof(char)); // Для каждой строки выделяется w
-
-        if (g[i] == NULL) // И опять проверка
+         // Для каждой строки выделяется w
+        g[i] = (char*)malloc((size_t)w * sizeof(char));
+        if (g[i] == NULL)
         {
-            for (int j = 0; j < i; j++) free(g[j]); // Если очередная строка не выделилась — откат всего
-            free(g); // Освобождаем массив указателей
+            for (int j = 0; j < i; j++) free(g[j]);
+            free(g);
             return NULL;
         }
     }
     return g; // вовзращаем указатель на массив, если все выделилось
 }
 
-// ДЛЯ ОСВОБОЖДЕНИЯ ДВУМЕРНОГО МАССИВА
+// Для освобождения двумерного массива
 void freeGrid(char **g, int h)
 {
-    if (g == NULL) return; // Проверка есть ли, что освобождать
+    if (g == NULL) return;
 
-    // Если есть что
-    for (int i = 0; i < h; i++) free(g[i]); // Освобождаем каждую строку
-    free(g); // Освобождаем массив указателей
+    for (int i = 0; i < h; i++) free(g[i]);
+    free(g);
 }
 
-// ДЛЯ ОСВОБОЖДЕНИЯ ВСЕЙ КАРТЫ
+// Для освобождения всей карты
 void freeForest(ForestMap *m)
 {
-    if (m == NULL) return; // Защита от NULL структуры
+    if (m == NULL) return;
 
-    freeGrid(m -> cells, m -> height); // Освобождает двумерный массив cells через freeGrid
+    // Освобождает двумерный массив cells через freeGrid
+    freeGrid(m -> cells, m -> height);
     m -> cells = NULL; // обнуляет указатель после освобождения
 }
 
-/* ДЛЯ ПРОВЕРКИ ХОТЯ БЫ ОДНОГО СВОБОДНОГО СОСЕДА, 
-что бы игрок и/или костер/портал не оказались замкнутыми припятствиями*/
+// ========== РАБОТА С КАРТОЙ ========== //
+
+/* Для проверки хотя бы одного свободного соседа,
+что бы игрок и/или костер/портал не оказались замкнутыми припятствиями */
 static int hasFreeNeighbor(ForestMap *m, int x, int y) 
 {
     // 4 стороны в округ
     int dx[] = {0, 0, -1, 1};
     int dy[] = {-1, 1, 0, 0};
 
-    // Перебираем каждую сторону и смотрим
     for (int i = 0; i < 4; i++) 
     {
-        // Координаты соседов
         int nx = x + dx[i];
         int ny = y + dy[i];
 
-        // Если сосед за пределаи карты - не считать
+        // Если за пределами карты - не считать
         if (nx < 0 || nx >= m -> width || ny < 0 || ny >= m -> height) continue;
 
-        // Если есть хотя бы 1 сосед [.] - выходим из hasFreeNeighbor с 1 - успех
-        if (m -> cells[ny][nx] == '.') return 1;
+        if (m -> cells[ny][nx] == '.') return 1; // Нашли 1 мин.
     }
-    return 0; // Если в округ припятствия, после того как все 4 просмотрели
+    return 0;
 }
 
-// ФУНКЦИЯ ДЛЯ ЗАПОЛНЕНИЯ ForestMap И СОЗДАНИЯ НОВОГО УЧАСТКА ЛЕСА
+// Функция для заполнения ForestMap и создания нового участка леса
 int generateForest(ForestMap *m) 
 {
-    // Размеры карты, может быть не квадрат! Используем функцию randInRange
-    // Может выпасть например h = 12, w = 27 (12x27 карта)
-    m -> height = randInRange(MIN_MAP, MAX_MAP); // Для высоты
-    m -> width = randInRange(MIN_MAP, MAX_MAP); // Для ширины
+    // Рандомизируем размер карты
+    m -> height = randInRange(MIN_MAP, MAX_MAP);
+    m -> width = randInRange(MIN_MAP, MAX_MAP);
 
     // Генерация биома
     m -> biome = randInRange(0, 3);
 
     // Выделяем память с числами которые выпали для height и width
-    m -> cells = allocGrid(m -> height, m -> width); // Закидываем в allocGrid
-    if (m -> cells == NULL) return 0; // Если что-то не сработало
+    m -> cells = allocGrid(m -> height, m -> width);
+    if (m -> cells == NULL) return 0;
 
     // [.] Заполняем карту точками
-    for (int count_h = 0; count_h < m -> height; count_h++)  // Перебор строк до последней
+    for (int count_h = 0; count_h < m -> height; count_h++)
     {
-        for (int count_w = 0; count_w < m -> width; count_w++) // Перебор столбцов до последнего
+        for (int count_w = 0; count_w < m -> width; count_w++)
         {
-            m -> cells[count_h][count_w] = '.'; // Заполняем точками
+            m -> cells[count_h][count_w] = '.';
         }
     }
 
-    // [T] [R] Заполняем случайно деревьями и камнями. (T) и (R)
+    // [T] [R] Заполняем случайно деревьями и камнями.
     int pct;
-    // На разных биомах - разный % препятствий
+
     switch (m -> biome) 
     {
+        // На разных биомах - разный % препятствий
         case BIOME_WOODS: pct = randInRange(10, 15); break;
         case BIOME_CRYSTAL: pct = randInRange(15, 20); break;
         case BIOME_RUINS: pct = randInRange(25, 35); break;
@@ -110,34 +107,31 @@ int generateForest(ForestMap *m)
         default: pct = randInRange(OBSTACLE_MIN_PERCENT, OBSTACLE_MAX_PERCENT);
     }
 
-    for (int y = 0; y < m -> height; y++) // Перебор строк до последней
+    for (int y = 0; y < m -> height; y++)
     {
-        for (int x = 0; x < m -> width; x++) // Перебор столбцов до последнего
+        for (int x = 0; x < m -> width; x++)
         {
             if (rand() % 100 < pct) // Если выпадает клетке шанс получить припятствие, то ставим
             {
-                m -> cells[y][x] = (rand() % 2) ? 'T' : 'R'; // Рандомим в нее T или R
+                m -> cells[y][x] = (rand() % 2) ? 'T' : 'R'; // Рандом T или R
             }
         }
     }
 
     // [%] Спавним героя
-    int placed = 0; // placed = 0 герой не поставлен, 1 - посвлен
+    int placed = 0; // placed = 0 герой не поставлен, 1 - поставлен
 
-    // Пока !tries (то есть не поставлен персонаж) и tries < 2000 (ограничение)
-    /* Ограничение, потому что вся карта мб будет в T и R (не ну а чо нет) и  
-    тогда ставить некуда будет перса. Поэтому ограничение, что бы не упала программа */ 
     for (int tries = 0; tries < 2000 && !placed; tries++) 
     {
-        // Генерируем случайные координаты для спавна игрока
-        int y = randInRange(0, m -> height - 1); // x
-        int x = randInRange(0, m -> width - 1); // y
+        // Генерируем случайные координаты для спавна
+        int y = randInRange(0, m -> height - 1);
+        int x = randInRange(0, m -> width - 1);
         // -1 потому что если например height 12, то x ∈ [0, 11]
 
-        // Проверяем нет ли там припятствия T или R (точка ли там?)
+        // Проверяем: точка ли там?
         if (m -> cells[y][x] == '.' && hasFreeNeighbor(m, x, y)) 
         {
-            m -> cells[y][x] = '@'; // Если '.', то ставим героя
+            m -> cells[y][x] = '@';
 
             // Записываем координаты игрока в hero_x, hero_y
             m -> hero_x = x;
@@ -146,26 +140,25 @@ int generateForest(ForestMap *m)
         }
     }
 
-    // Если не хватило 2000 попыток, то возвращаем 0 (не, ну а вдруг)
+    // Если не хватило 2000 попыток
     if (!placed) return 0; 
 
-    // [^] Создаем костер. Собственно также
-    // ==== КОСТЕР СОЗДАЕТСЯ ПОСЛЕ СПАВНА ГЕРОЯ ЧТО БЫ ОН НЕ ПОПАЛ НА ГЕРОЯ СРАЗУ === // 
+    // [^] Создаем костер, также 
     int camp_ok = 0;
-    for (int tries = 0; tries < 1000 && !camp_ok; tries++) // Также
+    for (int tries = 0; tries < 1000 && !camp_ok; tries++)
     {
-        // Рандомом генерируем координаты
         int y = randInRange(0, m -> height - 1); // y
         int x = randInRange(0, m -> width - 1); // x  
 
-        // Проверяем нет ли там припятствия T или R (точка ли там?)
+        // Проверка: точка ли там?
         if (m -> cells[y][x] == '.' && hasFreeNeighbor(m, x, y))
         {
-            m -> cells[y][x] = '^'; // Если '.', то ставим костер
+            m -> cells[y][x] = '^';
             camp_ok = 1; // Поставили
         }
     }
-    // Если не хватило 1000 попыток, то возвращаем 0 (не, ну а вдруг)
+
+    // Если не хватило 1000 попыток
     if (!camp_ok) return 0;
 
     // Сброс счетчиков
@@ -176,12 +169,12 @@ int generateForest(ForestMap *m)
     return 1;
 }
 
-// ДЛЯ ВЫВОДА НА ЭКРАН: карта, инструкция по управлению, прочие инструкции (status_message)
+// Для вывода на экран status_message (карта, инструкция по управлению, прочие инструкции)
 void printForest(const ForestMap *m) 
 {
     const char *biome_name = "Неизвестно";
 
-    // Какой биом выпал
+    // Какой биом?
     if (m -> biome == BIOME_WOODS) biome_name = "Редколесье";
     else if (m -> biome == BIOME_SWAMP) biome_name = "Топь";
     else if (m -> biome == BIOME_RUINS) biome_name = "Каменные руины";
@@ -191,7 +184,6 @@ void printForest(const ForestMap *m)
     printf("\n--- Локация %s %dx%d. Пройденно карт: %d | Переходов через край: %d ---\n\n", biome_name,
         m -> width, m -> height, m -> maps_passed, m -> edges_crossed);
 
-    // Перебираем
     for (int y = 0; y < m -> height; y++) 
     {
         for (int x = 0; x < m -> width; x++) 
@@ -211,24 +203,24 @@ void printForest(const ForestMap *m)
     printf("\n");
 }
 
-// ДЛЯ СПАВНА ПОРТАЛА НА КАРТЕ
+// [P] Для спавна портала на карте
 void maybeSpawnPortal(ForestMap *m) 
 {
     // Проверки при попадании в эту функцию
     if (m -> portal_active) return; // portal_active = 0? Если 1 - выходим
     if (m -> edges_crossed < RING_TRIGGER_COUNT) return; // Прошел ли игрок 3+ карты? Если нет - выходим
 
-    for (int tries = 0; tries < 2000; tries++)  // 2000 попыток спавна портала
+    for (int tries = 0; tries < 2000; tries++)
     {
         // Рандомизируем координаты
         int y = randInRange(0, m -> height - 1); // y
         int x = randInRange(0, m -> width - 1); // x  
 
-        // Проверяем точка ли там
+        // Проверка: точка ли там?
         if (m -> cells[y][x] == '.' && hasFreeNeighbor(m, x, y)) 
         {
-            m -> cells[y][x] = 'P'; // Ставим P, ели свободно
-            m -> portal_active = 1; // Меняем m -> portal_active на 1
+            m -> cells[y][x] = 'P';
+            m -> portal_active = 1;
 
             // Уведомляем игрока о появлении портала
             strcpy(status_message, "Вы заблудились... На карте появился портал (P)");
@@ -237,7 +229,7 @@ void maybeSpawnPortal(ForestMap *m)
     }
 }
 
-// ДЛЯ ПЕРЕДВИЖЕНИЯ ИГРОКА ПО КАРТЕ
+// Для передвижения игрока по карте
 // 0 — шаг не состоялся или обычный шаг;
 // 1 — игрок вошёл в портал (нужен переход на новый этаж).
 int tryMoveForest(ForestMap *m, const char *dir)
@@ -300,7 +292,7 @@ int tryMoveForest(ForestMap *m, const char *dir)
     return 0;
 }
 
-// [case: 12] ГЛАВНАЯ ЗАПУСКАЮЩАЯ ФУНКЦИЯ
+// Главная, запускающая функция
 void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_NAME_LEN])
 {
     // Проверки условий похода
@@ -344,6 +336,11 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
     system("clear");
     printForest(&m);
 
+    // Запоминаем сколько золота и сколько монстров было убито до похода
+    int start_gold = p -> gold;
+    int start_killed = p -> monsters_killed;
+    int start_resousers = p -> resources_gathered;
+
     while (running)
     {
         printf("\nHP: %d/%d | Выносливость: %d/%d | Золото: %d | Этаж: %d | Время %d:00\n",
@@ -386,7 +383,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             {
                 system("clear");
                 printf("Вы отдохнули у костра и вернулись домой.\n");
-                write_adventure_report(p, t->day, m.maps_passed, 0);
+                write_adventure_report(p, t->day, m.maps_passed, 0, start_gold, start_killed, start_resousers);
                 running = 0;
             }
             else
@@ -487,7 +484,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             if (!generateForest(&m))
             {
                 printf("Ошибка генерации леса.\n");
-                write_adventure_report(p, t->day, m.maps_passed, 1);
+                write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
                 return;
             }
 
@@ -496,7 +493,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             {
                 printf("Ошибка генерации сущностей на новом этаже!\n");
                 freeForest(&m);
-                write_adventure_report(p, t->day, m.maps_passed, 1);
+                write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
                 return;
             }
         }
@@ -508,7 +505,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
             p->gold /= 2;
             p->hp = 1;
-            write_adventure_report(p, t->day, m.maps_passed, 1);
+            write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
             break;
         }
 
@@ -519,7 +516,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             printf("\nВы погибли в бою! Спасатели забрали половину золота и доставили вас домой.\n");
             p->gold /= 2;
             p->hp = 1;
-            write_adventure_report(p, t->day, m.maps_passed, 1);
+            write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
             break;
         }
 

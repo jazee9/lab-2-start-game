@@ -119,7 +119,7 @@ void printMenu(const char *farmer)
     printf("\nВыбор: ");
 }
 
-// Для [case: 3] "Подменю"
+// Для подменю "Управление временем"
 void timeMenu(Player *p, GameTime *t)
 {
     int choice;

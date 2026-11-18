@@ -41,6 +41,7 @@ Player* create_player(void);
 void free_player(Player *p);
 void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 int playerExist(Player *p);
-void write_adventure_report(Player *p, int day, int floor_reached, int is_dead);
+void write_adventure_report(Player *p, int day, int floor_reached, int is_dead, 
+                            int start_gold, int start_kills, int start_resources);
 
 #endif

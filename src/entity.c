@@ -10,8 +10,10 @@
 #define MAX_HEALS_ON_FLOOR 2          // Макс. кол-во аптечек на этаже
 #define DIFFICULTY_MULTIPLIER 0.7     // Множитель сложности
 #define HOW_MUCH_HEAL_PLUS_STAMINA 40 // На сколько увеличив. аптечка выносливость
+#define TROPHY_DROP_CHANCE 10         // Шанс выпадения трофея с убийства монстра в %
+#define TROPHY_ITEM_ID 9              // ID трофейного предмета
 
-//
+// Проверяет, есть ли у клетки свободный сосед, чтобы монстры не спавнились в тупиках
 static int hasFreeNeighborEntity(ForestMap *m, int x, int y) 
 {
     int dx[] = {0, 0, -1, 1};
@@ -260,8 +262,31 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                     p -> gold += reward;
                     p -> monsters_killed++;
 
-                    sprintf(status_message, "Вы победили монстра! Нанесли %d урона и получили %d золота.", player_damage, reward);
+                    // Трофей
+                    int trophy_found = 0;
+
+                    if (rand() % 100 < TROPHY_DROP_CHANCE) 
+                    {
+                        if (add_to_inventory(p, TROPHY_ITEM_ID)) 
+                        {
+                            trophy_found = 1;
+                        }
+                    }
+
+                    // Если выпал
+                    if (trophy_found) 
+                    {
+                        sprintf(status_message, "Вы победили монстра! Получено %d золота. Трофей: %s!", 
+                                reward, item_names[TROPHY_ITEM_ID]);
+                    } 
+                    // Если нет(
+                    else 
+                    {
+                        sprintf(status_message, "Вы победили монстра и получили %d золота.", 
+                                reward);
+                    }
                 }
+
                 // Если он жив, то бьет в ответ
                 else
                 {

@@ -64,15 +64,23 @@ void free_player(Player *p)
 // [case: 2] ВЫВОД КАРТОЧКИ ПЕРСОНАЖА
 void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
 {
-    // Заголовки
-    printf("\n--- Карточка: %s ---\n", p -> name);
-    printf("\n> HP: %d/%d | Выносливость: %d/%d | Золото: %d\n", p -> hp, p -> max_hp, p -> stamina, 
-        p -> max_stamina, p -> gold);
+    int input = 0;
 
-    if (p -> maps_drawn > 0) printf("Зарисовано карт: %d\n", p -> maps_drawn);
+    while (input)
+        // Заголовки
+        printf("\n--- Карточка: %s ---\n", p -> name);
+        printf("\n> HP: %d/%d | Выносливость: %d/%d | Золото: %d\n", p -> hp, p -> max_hp, p -> stamina, 
+            p -> max_stamina, p -> gold);
 
-    printf("\n> Инвентарь:\n");
-    showInventory(p -> inventory, item_names);
+        if (p -> maps_drawn > 0) printf("Зарисовано карт: %d\n", p -> maps_drawn);
+
+        printf("\n> Инвентарь:\n");
+        showInventory(p -> inventory, item_names);
+
+        printf("\nВыйти в меню (1): ");
+        input = readInt();
+
+        if (input == 1) {system("clear"); return;}
 }
 
 // ======== РАБОТА С ИНВЕНТАРЕМ ======== //
@@ -276,17 +284,23 @@ void sell_maps(Player *p)
 }
 
 // Функция для записи краткого отчёта о вылазке
-void write_adventure_report(Player *p, int day, int floor_reached, int is_dead) 
+void write_adventure_report(Player *p, int day, int floor_reached, int is_dead, 
+    int start_gold, int start_killed, int start_resousers) 
 {
     FILE *f = fopen("diary.txt", "a");
     if (f == NULL) return;
+
+    // Считаем сколько было добыто и убито за поход
+    int result_gold = p -> gold - start_gold;
+    int result_killed = p -> monsters_killed - start_killed;
+    int result_resousers = p -> resources_gathered - start_resousers;
     
     fprintf(f, "\n=== Отчет о походе ===");
     fprintf(f, "\nФермер: %s | День %d", p->name, day);
     fprintf(f, "\nДостигнут этаж: %d", floor_reached);
-    fprintf(f, "\nДобыто ресурсов: %d", p->resources_gathered);
-    fprintf(f, "\nУбито монстров: %d", p->monsters_killed);
-    fprintf(f, "\nЗолото: %d", p->gold);
+    fprintf(f, "\nДобыто ресурсов: %d", result_resousers);
+    fprintf(f, "\nУбито монстров: %d", result_killed);
+    fprintf(f, "\nЗолото: %d", result_gold);
 
     if (is_dead) fprintf(f, "\n\nСтатус: Экстренная эвакуация (обморок)");
     else fprintf(f, "\n\nСтатус: Успешное возвращение домой\n");
