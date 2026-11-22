@@ -316,6 +316,12 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
         return;
     }
 
+    if (p->hp <= 1) 
+    {
+        printf("У вас слишком плохо с самочувствием... Лучше лечь спать!\n");
+        return;
+    }
+
     // Генерируем первую карту
     ForestMap m;
     memset(&m, 0, sizeof(m));
@@ -522,7 +528,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             system("clear");
             printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
             p->gold /= 2;
-            p->hp = 1;
+            p->hp = 0;
             write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
             break;
         }
@@ -533,7 +539,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             system("clear");
             printf("\nВы погибли в бою! Спасатели забрали половину золота и доставили вас домой.\n");
             p->gold /= 2;
-            p->hp = 1;
+            p->hp = 0;
             write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
             break;
         }

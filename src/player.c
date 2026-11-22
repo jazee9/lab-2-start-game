@@ -295,7 +295,7 @@ void write_adventure_report(Player *p, int day, int floor_reached, int is_dead,
 
     if (is_dead) fprintf(f, "\n\nСтатус: Экстренная эвакуация (обморок)");
     else fprintf(f, "\n\nСтатус: Успешное возвращение домой\n");
-    fprintf(f, "======================\n\n");
+    fprintf(f, "\n======================\n\n");
 
     fclose(f);
 }
