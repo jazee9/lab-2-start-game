@@ -33,7 +33,7 @@ typedef struct Entity
 
 // Прототипы функций
 int generate_entities(ForestMap *m, Entity **entities);
-void free_entities(Entity *entities, int count);
+void free_entities(Entity *entities);
 int interact_with_entity(Player *p, Entity *entities, int entity_count, int target_x, int target_y, ForestMap *m, char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 void check_nature_wrath(ForestMap *m, Entity **entities, int *entity_count);
 

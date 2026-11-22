@@ -34,8 +34,8 @@ Player* create_player(void)
     // Характеристики игрока при создании
     p -> max_hp = 100;
     p -> hp = 100;
-    p -> max_stamina = 50;
-    p -> stamina = 50;
+    p -> max_stamina = 50; // 100;
+    p -> stamina = 50; // 100;
     p -> gold = 50;
     p -> maps_drawn = 0;
     p -> attack = 5;
@@ -64,23 +64,14 @@ void free_player(Player *p)
 // [case: 2] ВЫВОД КАРТОЧКИ ПЕРСОНАЖА
 void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]) 
 {
-    int input = 0;
+    printf("\n--- Карточка: %s ---\n", p -> name);
+    printf("\n> HP: %d/%d | Выносливость: %d/%d | Золото: %d\n", p -> hp, p -> max_hp, p -> stamina, 
+        p -> max_stamina, p -> gold);
 
-    while (input)
-        // Заголовки
-        printf("\n--- Карточка: %s ---\n", p -> name);
-        printf("\n> HP: %d/%d | Выносливость: %d/%d | Золото: %d\n", p -> hp, p -> max_hp, p -> stamina, 
-            p -> max_stamina, p -> gold);
+    if (p -> maps_drawn > 0) printf("Зарисовано карт: %d\n", p -> maps_drawn);
 
-        if (p -> maps_drawn > 0) printf("Зарисовано карт: %d\n", p -> maps_drawn);
-
-        printf("\n> Инвентарь:\n");
-        showInventory(p -> inventory, item_names);
-
-        printf("\nВыйти в меню (любая цифра): ");
-        input = readInt();
-
-        if (input == 1) return;
+    printf("\n> Инвентарь:\n");
+    showInventory(p -> inventory, item_names);
 }
 
 // ======== РАБОТА С ИНВЕНТАРЕМ ======== //

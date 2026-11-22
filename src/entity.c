@@ -13,24 +13,6 @@
 #define TROPHY_DROP_CHANCE 10         // Шанс выпадения трофея с убийства монстра в %
 #define TROPHY_ITEM_ID 9              // ID трофейного предмета
 
-// Проверяет, есть ли у клетки свободный сосед, чтобы монстры не спавнились в тупиках
-static int hasFreeNeighborEntity(ForestMap *m, int x, int y) 
-{
-    int dx[] = {0, 0, -1, 1};
-    int dy[] = {-1, 1, 0, 0};
-
-    for (int i = 0; i < 4; i++)
-    {
-        int nx = x + dx[i];
-        int ny = y + dy[i];
-
-        if (nx < 0 || nx >= m->width || ny < 0 || ny >= m->height) continue;
-
-        if (m->cells[ny][nx] == '.') return 1;
-    }
-    return 0;
-}
-
 // Функция для генерации сущностей
 int generate_entities(ForestMap *m, Entity **entities)
 {
@@ -178,11 +160,11 @@ int generate_entities(ForestMap *m, Entity **entities)
 }
 
 // Функция для очистки памяти
-void free_entities(Entity *entities, int count)
+void free_entities(Entity *entities)
 {
     if (entities != NULL)
     {
-        printf("Память массива сущностей по адресу %p освобождена\n", (void *)entities);
+        printf("\nПамять массива сущностей по адресу %p освобождена\n", (void *)entities);
         free(entities);
     }
 }
@@ -220,8 +202,6 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                 int damage = p->attack;
                 entities[i].hp -= damage; // Тратится хп у объекта
 
-                char msg[256];
-
                 // Если закончилось хп у объекта
                 if (entities[i].hp <= 0)
                 {
@@ -233,18 +213,18 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                     // Уведомляем игрока, что он разрушил объект и предмет добавлен в рюкзак
                     if (add_to_inventory(p, entities[i].drop_item_id))
                     {
-                        sprintf(status_message, "Вы разрушили объект и получили: %s!", item_names[entities[i].drop_item_id]);
+                        sprintf(m->status_message, "Вы разрушили объект и получили: %s!", item_names[entities[i].drop_item_id]);
                     }
                     // Если у него забит рюкзак
                     else
                     {
-                        sprintf(status_message, "Ваш рюкзак переполон! Предмет пропал.");
+                        sprintf(m->status_message, "Ваш рюкзак переполнен! Предмет пропал.");
                     }
                 }
                 // Если хп еще не закончилось у объекта
                 else
                 {
-                    sprintf(status_message, "Вы ударили %s на %d урона (Осталось хп: %d/%d)", item_names[entities[i].drop_item_id], damage, entities[i].hp, entities[i].max_hp);
+                    sprintf(m->status_message, "Вы ударили %s на %d урона (Осталось хп: %d/%d)", item_names[entities[i].drop_item_id], damage, entities[i].hp, entities[i].max_hp);
                 }
 
                 return 1;
@@ -259,8 +239,6 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                     player_damage = 1;
                 entities[i].hp -= player_damage;
                 p->stamina -= 2;
-
-                char msg[256];
 
                 // Если он сдох
                 if (entities[i].hp <= 0)
@@ -291,19 +269,19 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                     {
                         // Если Энт
                         if (entities[i].symbol == 'E') 
-                            sprintf(status_message, "Вы победили Энта! Получено %d золота. Трофей: %s!", 
+                            sprintf(m->status_message, "Вы победили Энта! Получено %d золота. Трофей: %s!", 
                                 reward, item_names[TROPHY_ITEM_ID]);
 
-                        else sprintf(status_message, "Вы победили монстра! Получено %d золота. Трофей: %s!", 
+                        else sprintf(m->status_message, "Вы победили монстра! Получено %d золота. Трофей: %s!", 
                                 reward, item_names[TROPHY_ITEM_ID]);
                     } 
                     // Если нет(
                     else 
                     {
                         if (entities[i].symbol == 'E')
-                            sprintf(status_message, "Вы победили Энта и получили %d золота.", 
+                            sprintf(m->status_message, "Вы победили Энта и получили %d золота.", 
                                 reward);
-                        else sprintf(status_message, "Вы победили монстра и получили %d золота.", 
+                        else sprintf(m->status_message, "Вы победили монстра и получили %d золота.", 
                                 reward);
                     }
                 }
@@ -316,7 +294,7 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                         monster_damage = 1;
                     p->hp -= monster_damage;
 
-                    sprintf(status_message, "Вы ударили монстра на %d. Монстр ударил вас на %d (Ваше HP: %d, HP монстра: %d)",
+                    sprintf(m->status_message, "Вы ударили монстра на %d. Монстр ударил вас на %d (Ваше HP: %d, HP монстра: %d)",
                             player_damage, monster_damage, p->hp, entities[i].hp);
                 }
                 return 1;
@@ -334,7 +312,7 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                 if (p->stamina > p->max_stamina)
                     p->stamina = p->max_stamina;
 
-                strcpy(status_message, "Вы съели ягоды и восстановили HP и выносливость!");
+                strcpy(m->status_message, "Вы съели ягоды и восстановили HP и выносливость!");
                 return 2;
             }
         }
@@ -363,6 +341,12 @@ void check_nature_wrath(ForestMap *m, Entity **entities, int *entity_count)
 
                 if (m -> cells[y][x] == '.') 
                 {
+                    // Увеличиваем массив сущностей перед добавлением Энтов
+                    Entity *new_entities = (Entity *)realloc(*entities, 
+                        (size_t)(*entity_count + 1) * sizeof(Entity));
+                    if (new_entities == NULL) break;
+                    *entities = new_entities;
+
                     m -> cells[y][x] = 'E'; // Спавним энта
                     Entity e;
                     e.type = ENT_MONSTER;

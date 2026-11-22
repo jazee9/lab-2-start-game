@@ -3,8 +3,6 @@
 #include "utils.h"
 #include "entity.h"
 
-char status_message[256] = "";
-
 // ================ ФУНКЦИИ ================ //
 
 // ========== РАБОТА С ПАМЯТЬЮ ========== //
@@ -166,6 +164,7 @@ int generateForest(ForestMap *m)
     m -> portal_active = 0;
     m -> on_camp = 0;
     m -> is_mapped = 0;
+    m -> status_message[0] = '\0';
     return 1;
 }
 
@@ -204,8 +203,8 @@ void printForest(const ForestMap *m)
     }
 
     // Вывод последнего события
-    if (status_message[0] != '\0') {
-        printf("\n[Событие]: %s\n", status_message);
+    if (m->status_message[0] != '\0') {
+        printf("\n[Событие]: %s\n", m->status_message);
     } else {
         printf("\n[Событие]: Ничего не произошло.\n");
     }
@@ -232,7 +231,7 @@ void maybeSpawnPortal(ForestMap *m)
             m -> portal_active = 1;
 
             // Уведомляем игрока о появлении портала
-            strcpy(status_message, "Вы заблудились... На карте появился портал (P)");
+            strcpy(m->status_message, "Вы заблудились... На карте появился портал (P)");
             return;
         }
     }
@@ -290,7 +289,7 @@ int tryMoveForest(ForestMap *m, const char *dir)
     {
         m->on_camp = 1;
         m->cells[ny][nx] = '@';
-        strcpy(status_message, "Вы у костра, можно передохнуть (Q - выйти домой)");
+        strcpy(m->status_message, "Вы у костра, можно передохнуть (Q - выйти домой)");
     }
     else
     {
@@ -321,7 +320,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
     ForestMap m;
     memset(&m, 0, sizeof(m));
     m.maps_passed = 1;
-    status_message[0] = '\0';
+    m.status_message[0] = '\0';
     // Проверка генерации
     if (!generateForest(&m))
     {
@@ -361,22 +360,22 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
         if (fgets(ch, sizeof(ch), stdin) == NULL)
             break;
 
-        status_message[0] = '\0';
+        m.status_message[0] = '\0';
 
         // [M] - Зарисовать этаж
         if (ch[0] == 'M' || ch[0] == 'm' ||
             strncmp(ch, "ь", 2) == 0 || strncmp(ch, "Ь", 2) == 0)
         {
             if (m.is_mapped == 1)
-                strcpy(status_message, "Вы уже зарисовали этот этаж!");
+                strcpy(m.status_message, "Вы уже зарисовали этот этаж!");
             else if (p->stamina < 5)
-                strcpy(status_message, "Зарисовать этаж можно за 5 выносливости, у вас меньше!");
+                strcpy(m.status_message, "Зарисовать этаж можно за 5 выносливости, у вас меньше!");
             else
             {
                 p->stamina -= 5;
                 p->maps_drawn++;
                 m.is_mapped = 1;
-                strcpy(status_message, "Вы зарисовали этот этаж!");
+                strcpy(m.status_message, "Вы зарисовали этот этаж!");
             }
 
             system("clear");
@@ -397,7 +396,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             }
             else
             {
-                strcpy(status_message, "Выйти домой можно только стоя на костре (^).");
+                strcpy(m.status_message, "Выйти домой можно только стоя на костре (^).");
                 system("clear");
                 printForest(&m);
             }
@@ -493,7 +492,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
 
             if (entities != NULL)
             {
-                free_entities(entities, entity_count);
+                free_entities(entities);
                 entities = NULL;
                 entity_count = 0;
             }
@@ -544,5 +543,5 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
     }
 
     freeForest(&m);
-    free_entities(entities, entity_count);
+    free_entities(entities);
 }
