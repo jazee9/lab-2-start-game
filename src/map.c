@@ -194,6 +194,15 @@ void printForest(const ForestMap *m)
     // Инструкция по управлению
     printf("\nW/A/S/D - идти. Q - домой (только на ^). M - зарисовать карту (5 стамины)\n");
 
+    // Вывод гнева природы
+    if (m -> total_resources > 0) 
+    {
+        int wrath_pct = (m->destroyed_resources * 100) / m->total_resources;
+        printf("\n[Гнев природы: %d%%] ", wrath_pct);
+        if (wrath_pct > 50) printf("[ЛЕС В ЯРОСТИ!]\n");
+        else printf("\n");
+    }
+
     // Вывод последнего события
     if (status_message[0] != '\0') {
         printf("\n[Событие]: %s\n", status_message);
@@ -255,7 +264,7 @@ int tryMoveForest(ForestMap *m, const char *dir)
     char c = m->cells[ny][nx];
 
     // Этим занимается interact_with_entity
-    if (c == 'T' || c == 'R' || c == 'M' || c == '+') return 0;
+    if (c == 'T' || c == 'R' || c == 'M' || c == '+' || c == 'E') return 0;
 
     if (crossed) m->edges_crossed++;
 
@@ -453,6 +462,8 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             }
         }
 
+        check_nature_wrath(&m, &entities, &entity_count); // Проверка на Гнев Природы / x2 аптечки
+
         // [P] - Переход на новый этаж
         if (res == 1)
         {
@@ -463,6 +474,13 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
                 p->stamina = 0;
                 break;
             }
+
+            // Проверка на то как пройден этаж - зачищено < или > 10% (надо доп аптечки?)
+            int gentle = 0;
+            if (m.total_resources > 0 &&
+                m.destroyed_resources * 100 <= m.total_resources * 10) gentle = 1;
+            if (gentle) m.heal_bonus_next = MAX_HEALS_ON_FLOOR;
+            else m.heal_bonus_next = 0;
 
             m.maps_passed++;
             p->stamina -= 5;
@@ -489,6 +507,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             }
 
             entity_count = generate_entities(&m, &entities);
+
             if (entity_count < 0)
             {
                 printf("Ошибка генерации сущностей на новом этаже!\n");

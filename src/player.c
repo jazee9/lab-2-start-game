@@ -77,10 +77,10 @@ void print_player_card(const Player *p, char item_names[MAX_ITEMS][MAX_NAME_LEN]
         printf("\n> Инвентарь:\n");
         showInventory(p -> inventory, item_names);
 
-        printf("\nВыйти в меню (1): ");
+        printf("\nВыйти в меню (любая цифра): ");
         input = readInt();
 
-        if (input == 1) {system("clear"); return;}
+        if (input == 1) return;
 }
 
 // ======== РАБОТА С ИНВЕНТАРЕМ ======== //
@@ -295,7 +295,7 @@ void write_adventure_report(Player *p, int day, int floor_reached, int is_dead,
     int result_killed = p -> monsters_killed - start_killed;
     int result_resousers = p -> resources_gathered - start_resousers;
     
-    fprintf(f, "\n=== Отчет о походе ===");
+    fprintf(f, "=== Отчет о походе ===");
     fprintf(f, "\nФермер: %s | День %d", p->name, day);
     fprintf(f, "\nДостигнут этаж: %d", floor_reached);
     fprintf(f, "\nДобыто ресурсов: %d", result_resousers);

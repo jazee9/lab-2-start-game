@@ -59,7 +59,7 @@ int main(void)
                 player = create_player(); break;
         // КАРТОЧКА ПЕРСОНАЖА 
         case 2: system("clear"); if (!playerExist(player)) break;
-                print_player_card(player, item_names); break;
+                print_player_card(player, item_names); system("clear"); break;
         // УПРАВЛЕНИЕ ВРЕМЕНЕМ
         case 3: system("clear"); if (!playerExist(player)) break;
                 timeMenu(player, &time); break; // Вызов подменню

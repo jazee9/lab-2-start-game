@@ -48,22 +48,24 @@ int generate_entities(ForestMap *m, Entity **entities)
     }
 
     // Выделяем память
-    int capacity = obstacle_count + MAX_MONSTERS_ON_FLOOR + MAX_HEALS_ON_FLOOR;
+    int capacity = obstacle_count + MAX_MONSTERS_ON_FLOOR + MAX_HEALS_ON_FLOOR + m -> heal_bonus_next;
     if (capacity < 1) capacity = 1;
 
     *entities = (Entity *)malloc((size_t)capacity * sizeof(Entity));
     if (*entities == NULL)
         return -1;
 
+    // Создаем сущности для деревьев и камней
+    int total_res = 0; // Счётчик ресурсов
     int count = 0;
 
-    // Создаем сущности для деревьев и камней
     for (int y = 0; y < m->height; y++)
     {
         for (int x = 0; x < m->width; x++)
         {
             if (m->cells[y][x] == 'T' || m->cells[y][x] == 'R')
             {
+                total_res++;
                 Entity e;
                 e.x = x;
                 e.y = y;
@@ -73,33 +75,39 @@ int generate_entities(ForestMap *m, Entity **entities)
                 e.attack = 0;
 
                 // Если это дерево
-                if (e.symbol == 'T')
-                {
+                if (e.symbol == 'T') {
                     e.type = ENT_WOOD;
                     e.drop_item_id = 1;
                     e.max_hp = WOOD_STRENGTH * m->maps_passed;
-                }
-
-                // Если это камень
-                else
-                {
+                } 
+                // Если камень
+                else {
                     e.type = ENT_STONE;
                     e.drop_item_id = 2;
                     e.max_hp = STONE_STRENGTH * m->maps_passed;
                 }
-
                 e.hp = e.max_hp;
                 (*entities)[count++] = e;
             }
         }
     }
 
+    // Доп. аптечки
+    int heals_to_spawn = MAX_HEALS_ON_FLOOR + m -> heal_bonus_next;
+
+    // Сброс счетчиков
+    m->total_resources = total_res;
+    m->destroyed_resources = 0;
+    m->angry_ents_spawned = 0;
+    m->floor_was_gentle = 0;
+    m->heal_bonus_next = 0;   
+
     // Спавним монстров
     int spawned_monsters = 0;
     int spawned_heals = 0;
     int tries = 0;
 
-    while ((spawned_heals < MAX_HEALS_ON_FLOOR ||
+    while ((spawned_heals < heals_to_spawn ||
             spawned_monsters < MAX_MONSTERS_ON_FLOOR)
            && tries < 5000) // 5000 попыток на спавн
     {
@@ -135,7 +143,7 @@ int generate_entities(ForestMap *m, Entity **entities)
         }
 
         // Спавним аптечку
-        else if (spawned_heals < MAX_HEALS_ON_FLOOR)
+        else if (spawned_heals < heals_to_spawn)
         {
             m->cells[y][x] = '+';
 
@@ -158,7 +166,7 @@ int generate_entities(ForestMap *m, Entity **entities)
 
     // Если не получилось, что то за спавнить return -1
     if (spawned_monsters < MAX_MONSTERS_ON_FLOOR ||
-        spawned_heals < MAX_HEALS_ON_FLOOR)
+        spawned_heals < heals_to_spawn)
     {
         printf("\nОшибка генерации, попробуйте снова!\n");
         free(*entities);
@@ -217,6 +225,7 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                 // Если закончилось хп у объекта
                 if (entities[i].hp <= 0)
                 {
+                    m -> destroyed_resources++;
                     entities[i].is_alive = 0;
                     m->cells[target_y][target_x] = '.';
                     p->resources_gathered++;
@@ -258,9 +267,13 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                 {
                     entities[i].is_alive = 0;
                     m -> cells[target_y][target_x] = '.';
-                    int reward = REWARD_FOR_MONSTER_KILL * m->maps_passed;
+                    int reward = REWARD_FOR_MONSTER_KILL * m -> maps_passed;
+                    if (entities[i].symbol == 'E') reward += 50; // C Энта на 50 больше золота
                     p -> gold += reward;
                     p -> monsters_killed++;
+
+                    // Счетчик для гнева природы увеличиваться если был убит не Энт
+                    if (entities[i].symbol != 'E') m -> destroyed_resources++;
 
                     // Трофей
                     int trophy_found = 0;
@@ -276,13 +289,21 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                     // Если выпал
                     if (trophy_found) 
                     {
-                        sprintf(status_message, "Вы победили монстра! Получено %d золота. Трофей: %s!", 
+                        // Если Энт
+                        if (entities[i].symbol == 'E') 
+                            sprintf(status_message, "Вы победили Энта! Получено %d золота. Трофей: %s!", 
+                                reward, item_names[TROPHY_ITEM_ID]);
+
+                        else sprintf(status_message, "Вы победили монстра! Получено %d золота. Трофей: %s!", 
                                 reward, item_names[TROPHY_ITEM_ID]);
                     } 
                     // Если нет(
                     else 
                     {
-                        sprintf(status_message, "Вы победили монстра и получили %d золота.", 
+                        if (entities[i].symbol == 'E')
+                            sprintf(status_message, "Вы победили Энта и получили %d золота.", 
+                                reward);
+                        else sprintf(status_message, "Вы победили монстра и получили %d золота.", 
                                 reward);
                     }
                 }
@@ -319,4 +340,45 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
         }
     }
     return 0; // Сущностей нет
+}
+
+// Функция для проверки гнева природы
+void check_nature_wrath(ForestMap *m, Entity **entities, int *entity_count) 
+{
+    if (m -> angry_ents_spawned || m -> total_resources == 0) return;
+
+    // Если зачищенно более 50% ресурсов на этаже
+    // Убито больше чем было/2
+    if (!m->angry_ents_spawned &&
+        m -> destroyed_resources > (m->total_resources / 2))
+    {
+        m -> angry_ents_spawned = 1;
+
+        for (int i = 0; i < 2; i++) 
+        {
+            for (int tries = 0; tries < 100; tries++) 
+            {
+                int x = randInRange(1, m->width - 2);
+                int y = randInRange(1, m->height - 2);
+
+                if (m -> cells[y][x] == '.') 
+                {
+                    m -> cells[y][x] = 'E'; // Спавним энта
+                    Entity e;
+                    e.type = ENT_MONSTER;
+                    e.symbol = 'E';
+                    e.x = x;
+                    e.y = y;
+                    e.attack  = 10 * m->maps_passed;
+                    e.max_hp  = 20 * m->maps_passed;
+                    e.hp = e.max_hp;
+                    e.defense = 2 * m->maps_passed;
+                    e.drop_item_id = 0;
+                    e.is_alive = 1;
+                    (*entities)[(*entity_count)++] = e;                    
+                    break;
+                }
+            }
+        }
+    }
 }
