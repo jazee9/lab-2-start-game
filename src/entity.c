@@ -3,15 +3,18 @@
 
 // Константы
 #define MAX_ENTITIES 100              // Максимальное кол-во сущностей на этаже
+#define MAX_HEALS_ON_FLOOR 2          // Макс. кол-во аптечек на этаже
+#define MAX_MONSTERS_ON_FLOOR 3       // Макс. кол-во монстров на этаже
 #define WOOD_STRENGTH 5               // Прочность дерева (на первом этаже)
 #define STONE_STRENGTH 20             // Прочность камня (на первом этаже)
 #define REWARD_FOR_MONSTER_KILL 20    // Базовая награда золотом за убийство монстра
-#define MAX_MONSTERS_ON_FLOOR 3       // Макс. кол-во монстров на этаже
-#define MAX_HEALS_ON_FLOOR 2          // Макс. кол-во аптечек на этаже
 #define DIFFICULTY_MULTIPLIER 0.7     // Множитель сложности
 #define HOW_MUCH_HEAL_PLUS_STAMINA 40 // На сколько увеличив. аптечка выносливость
 #define TROPHY_DROP_CHANCE 10         // Шанс выпадения трофея с убийства монстра в %
+// ID
 #define TROPHY_ITEM_ID 9              // ID трофейного предмета
+#define ID_WOOD 1                     // ID дерева
+#define ID_STONE 2                    // ID камня
 
 // Функция для генерации сущностей
 int generate_entities(ForestMap *m, Entity **entities)
@@ -59,13 +62,13 @@ int generate_entities(ForestMap *m, Entity **entities)
                 // Если это дерево
                 if (e.symbol == 'T') {
                     e.type = ENT_WOOD;
-                    e.drop_item_id = 1;
+                    e.drop_item_id = ID_WOOD;
                     e.max_hp = WOOD_STRENGTH * m->maps_passed;
                 } 
                 // Если камень
                 else {
                     e.type = ENT_STONE;
-                    e.drop_item_id = 2;
+                    e.drop_item_id = ID_STONE;
                     e.max_hp = STONE_STRENGTH * m->maps_passed;
                 }
                 e.hp = e.max_hp;
@@ -256,7 +259,7 @@ int interact_with_entity(Player *p, Entity *entities, int entity_count, int targ
                     // Трофей
                     int trophy_found = 0;
 
-                    if (rand() % 100 < TROPHY_DROP_CHANCE) 
+                    if (rand() % 100 <= TROPHY_DROP_CHANCE) 
                     {
                         if (add_to_inventory(p, TROPHY_ITEM_ID)) 
                         {
@@ -353,8 +356,8 @@ void check_nature_wrath(ForestMap *m, Entity **entities, int *entity_count)
                     e.symbol = 'E';
                     e.x = x;
                     e.y = y;
-                    e.attack  = 10 * m->maps_passed;
-                    e.max_hp  = 20 * m->maps_passed;
+                    e.attack  = 8 * m->maps_passed;
+                    e.max_hp  = 10 * m->maps_passed;
                     e.hp = e.max_hp;
                     e.defense = 2 * m->maps_passed;
                     e.drop_item_id = 0;

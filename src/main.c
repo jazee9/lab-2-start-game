@@ -44,7 +44,7 @@ int main(void)
         switch (choice) 
         {
         // ВЫХОД 
-        case 0: printf("Выход...\n"); free_player(player); break;  
+        case 0: printf("Выход...\n"); free_player(player); break; 
         // СОЗДАТЬ / ПЕРЕСОЗДАТЬ        
         case 1: system("clear");
                 if (player != NULL) 

@@ -9,7 +9,7 @@
 // == Карта == //
 // Размер
 #define MIN_MAP 5
-#define MAX_MAP 30
+#define MAX_MAP 10
 // Вероятности спавна припятствия
 #define OBSTACLE_MIN_PERCENT 15
 #define OBSTACLE_MAX_PERCENT 30

@@ -281,21 +281,25 @@ void write_adventure_report(Player *p, int day, int floor_reached, int is_dead,
     FILE *f = fopen("diary.txt", "a");
     if (f == NULL) return;
 
+    int result_gold_bad; // Если придется считать потеряное золото
+
     // Считаем сколько было добыто и убито за поход
     int result_gold = p -> gold - start_gold;
+    if (result_gold < 0) result_gold_bad = result_gold * -1; // Если потеряли золото
     int result_killed = p -> monsters_killed - start_killed;
     int result_resousers = p -> resources_gathered - start_resousers;
     
-    fprintf(f, "=== Отчет о походе ===");
+    fprintf(f, "========== Отчет о походе ==========");
     fprintf(f, "\nФермер: %s | День %d", p->name, day);
     fprintf(f, "\nДостигнут этаж: %d", floor_reached);
     fprintf(f, "\nДобыто ресурсов: %d", result_resousers);
     fprintf(f, "\nУбито монстров: %d", result_killed);
-    fprintf(f, "\nЗолото: %d", result_gold);
+    if (result_gold >= 0) fprintf(f, "\nПолучено золота: %d", result_gold);
+    else fprintf(f, "\nПотеряно золота: %d", result_gold_bad);
 
     if (is_dead) fprintf(f, "\n\nСтатус: Экстренная эвакуация (обморок)");
-    else fprintf(f, "\n\nСтатус: Успешное возвращение домой\n");
-    fprintf(f, "\n======================\n\n");
+    else fprintf(f, "\n\nСтатус: Успешное возвращение домой");
+    fprintf(f, "\n====================================\n\n\n");
 
     fclose(f);
 }

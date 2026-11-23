@@ -472,7 +472,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
         // [P] - Переход на новый этаж
         if (res == 1)
         {
-            if (p->stamina < 5)
+            if (p->stamina < 5) // Не хватило стамины
             {
                 system("clear");
                 printf("\nУ вас не хватило сил на переход! Вы падаете без сил...\n");
@@ -487,25 +487,31 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             if (gentle) m.heal_bonus_next = MAX_HEALS_ON_FLOOR;
             else m.heal_bonus_next = 0;
 
+            // Награда/траты стамины, +время и тд
             m.maps_passed++;
             p->stamina -= 5;
             t->hour += 1;
+            if (t->hour > 23) t->hour = 0;
             if (p->stamina < 0) p->stamina = 0;
-
             int gold_reward = BASE_MULTIPLIER * m.maps_passed;
             if (m.biome == BIOME_CRYSTAL) gold_reward *= 3;
             p->gold += gold_reward;
 
+            // Чистим энтити со старого этажа, если они есть
             if (entities != NULL)
             {
+                printf("\nПамять массива сущностей по адресу %p освобождена\n", (void*)entities);
                 free_entities(entities);
                 entities = NULL;
                 entity_count = 0;
             }
 
-            freeForest(&m);
+            freeForest(&m); // Чистим старую карту
+            
+            // Если не сгенерировалась новая карта
             if (!generateForest(&m))
             {
+                system("clear");
                 printf("Ошибка генерации леса.\n");
                 write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
                 return;
@@ -513,8 +519,10 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
 
             entity_count = generate_entities(&m, &entities);
 
+            // Если не сгенерировались энтити на след. этаже
             if (entity_count < 0)
             {
+                system("clear");
                 printf("Ошибка генерации сущностей на новом этаже!\n");
                 freeForest(&m);
                 write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
@@ -526,10 +534,13 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
         if (p->stamina <= 0 || (t->hour >= 2 && t->hour < 8))
         {
             system("clear");
-            printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
+            if (p->stamina <= 0) printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
+            else printf("\nСлишком поздно! Вы падаете без сил! Спасатели забрали половину золота.\n");
             p->gold /= 2;
             p->hp = 0;
             write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
+            if (t->hour == 1 || t->hour == 0) t->hour = 8;
+            else t->day++; t->hour = 8;
             break;
         }
 
@@ -541,13 +552,13 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             p->gold /= 2;
             p->hp = 0;
             write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
+            if (t->hour == 1 || t->hour == 0) t->hour = 8;
+            else t->day++; t->hour = 8;
             break;
         }
-
         system("clear");
         printForest(&m);
     }
-
     freeForest(&m);
     free_entities(entities);
 }
