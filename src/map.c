@@ -303,23 +303,13 @@ int tryMoveForest(ForestMap *m, const char *dir)
 // Главная, запускающая функция
 void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_NAME_LEN])
 {
-    // Проверки условий похода
-    if (p->stamina <= 0)
+    // Проверки условий похода (Нет хп/выносливости или слишком поздно)
+    if (p->stamina <= 0 || (t->hour >= 2 && t->hour < 8) || p->hp <= 1) 
     {
-        printf("Ваша выносливость на нуле... Лучше лечь спать!\n");
-        return;
-    }
-
-    if (t->hour >= 2 && t->hour < 8)
-    {
-        printf("Слишком поздно, лучше лечь спать!\n");
-        return;
-    }
-
-    if (p->hp <= 1) 
-    {
-        printf("У вас слишком плохо с самочувствием... Лучше лечь спать!\n");
-        return;
+        if (p->stamina <= 0) {printf("Ваша выносливость на нуле... Лучше лечь спать!\n"); return;}
+        else if (t->hour >= 2 && t->hour < 8) {printf("Слишком поздно, лучше лечь спать!\n"); return;}
+        else if (p->hp <= 1) {printf("У вас плохо с самочувствием. Лучше лечь спать!\n"); return;}
+        else {printf("Нельзя отправится в приключение, лучше лечь спать!\n"); return;}
     }
 
     // Генерируем первую карту
@@ -327,7 +317,6 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
     memset(&m, 0, sizeof(m));
     m.maps_passed = 1;
     m.status_message[0] = '\0';
-    // Проверка генерации
     if (!generateForest(&m))
     {
         printf("Ошибка генерации леса!\n");
@@ -338,7 +327,6 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
     // Генерируем сущности
     Entity *entities = NULL;
     int entity_count = generate_entities(&m, &entities);
-    // Проверка генерации
     if (entity_count < 0)
     {
         printf("Ошибка генерации сущностей!\n");
@@ -350,7 +338,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
     system("clear");
     printForest(&m);
 
-    // Запоминаем сколько золота и сколько монстров было убито до похода
+    // Запоминаем сколько золота и сколько монстров было убито до похода для дальнейшего отчета
     int start_gold = p -> gold;
     int start_killed = p -> monsters_killed;
     int start_resousers = p -> resources_gathered;
@@ -476,6 +464,9 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
             {
                 system("clear");
                 printf("\nУ вас не хватило сил на переход! Вы падаете без сил...\n");
+                printf("Спасатели забрали половину золота!\n");
+                p->gold /= 2;
+                write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
                 p->stamina = 0;
                 break;
             }
@@ -517,6 +508,7 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
                 return;
             }
 
+            // Кол-во энтити
             entity_count = generate_entities(&m, &entities);
 
             // Если не сгенерировались энтити на след. этаже
@@ -531,24 +523,12 @@ void forestRingAdventure(Player *p, GameTime *t, char item_names[MAX_ITEMS][MAX_
         }
 
         // Обморок (Экстренная эвакуация)
-        if (p->stamina <= 0 || (t->hour >= 2 && t->hour < 8))
+        if (p->stamina <= 0 || (t->hour >= 2 && t->hour < 8) || p->hp <= 0)
         {
             system("clear");
             if (p->stamina <= 0) printf("\nВы падаете без сил! Спасатели забрали половину золота.\n");
-            else printf("\nСлишком поздно! Вы падаете без сил! Спасатели забрали половину золота.\n");
-            p->gold /= 2;
-            p->hp = 0;
-            write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);
-            if (t->hour == 1 || t->hour == 0) t->hour = 8;
-            else t->day++; t->hour = 8;
-            break;
-        }
-
-        // Сдох с монстром
-        if (p->hp <= 0)
-        {
-            system("clear");
-            printf("\nВы погибли в бою! Спасатели забрали половину золота и доставили вас домой.\n");
+            else if (t->hour >= 2 && t->hour < 8) printf("\nСлишком поздно! Вы падаете без сил! Спасатели забрали половину золота.\n");
+            else printf("\nВы погибли в бою! Спасатели забрали половину золота и доставили вас домой.\n");
             p->gold /= 2;
             p->hp = 0;
             write_adventure_report(p, t->day, m.maps_passed, 1, start_gold, start_killed, start_resousers);

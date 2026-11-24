@@ -294,8 +294,8 @@ void write_adventure_report(Player *p, int day, int floor_reached, int is_dead,
     fprintf(f, "\nДостигнут этаж: %d", floor_reached);
     fprintf(f, "\nДобыто ресурсов: %d", result_resousers);
     fprintf(f, "\nУбито монстров: %d", result_killed);
-    if (result_gold >= 0) fprintf(f, "\nПолучено золота: %d", result_gold);
-    else fprintf(f, "\nПотеряно золота: %d", result_gold_bad);
+    if (result_gold >= 0) fprintf(f, "\nПолучено золота: %d. Теперь золота: %d", result_gold, p->gold);
+    else fprintf(f, "\nПотеряно золота: %d. Теперь золота: %d", result_gold_bad, p->gold);
 
     if (is_dead) fprintf(f, "\n\nСтатус: Экстренная эвакуация (обморок)");
     else fprintf(f, "\n\nСтатус: Успешное возвращение домой");
